@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>琴棋书画</title>
+    <style>
+        :root {
+            --container-width: 100%;
+            --max-width: 1200px;
+            --column-count: 3;
+            --column-gap: 20px;
+            --font-size: 18px;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+        }
+
+        .data-container {
+            width: var(--container-width);
+            max-width: var(--max-width);
+            margin: 0 auto;
+            column-count: var(--column-count);
+            column-gap: var(--column-gap);
+            background-color: #ffffff;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .data-container p {
+            margin: 0 0 8px 0;
+            padding: 2px 0;
+            line-height: 1.5;
+            break-inside: avoid;
+        }
+
+        .text-large {
+            font-size: var(--font-size);
+        }
+
+        .text-red {
+            color: #FF0000;
+            font-size: var(--font-size);
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 16px;
+            color: #666;
+            padding: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .data-container { column-count: 2; }
+        }
+        @media (max-width: 600px) {
+            .data-container { column-count: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="content" class="data-container">
+        <div class="loading">正在加载数据...</div>
+    </div>
+
+    <script>
+        // Đường link Google Apps Script lấy dữ liệu từ Google Sheet của bạn
+        const API_URL = "https://script.google.com/macros/s/AKfycbwqAInS7f9K7YgO0mJgGgUe_Example_URL/exec?sheet=KQ_AOMEN"; 
+        const DEFAULT_VALUE = "發發";
+
+        function sendHeight() {
+            setTimeout(() => {
+                const height = document.documentElement.scrollHeight || document.body.scrollHeight;
+                window.parent.postMessage({ type: 'RESIZE_IFRAME_QINQI', height: height }, '*');
+            }, 100);
+        }
+
+        function renderData(list) {
+            const container = document.getElementById('content');
+            if (!list || list.length === 0) {
+                container.innerHTML = '<div class="loading">暂无数据</div>';
+                sendHeight();
+                return;
+            }
+
+            let htmlStr = '';
+            list.forEach(item => {
+                const valDisplay = item.val ? item.val : DEFAULT_VALUE;
+                htmlStr += `
+<p>
+	<span class="text-large">${item.period}期【琴棋书画】?【</span><span class="text-red">${valDisplay}</span><span class="text-large">】开:？00准</span>&nbsp;
+</p>`;
+            });
+
+            container.innerHTML = htmlStr;
+            sendHeight();
+        }
+
+        // Tự động gọi dữ liệu từ Sheet KQ_AOMEN khi mở trang
+        async function fetchData() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                renderData(data);
+            } catch (error) {
+                console.error("Lỗi tải dữ liệu:", error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchData);
+        window.addEventListener('resize', sendHeight);
+    </script>
+</body>
+</html>

@@ -175,41 +175,6 @@
                 }
             }
 
-            let evaluatedDoneList = [];
-            for (let i = 0; i < doneList.length; i++) {
-                let item = doneList[i];
-                let predicted = getPredictQinQiShuHuaForKy(item.kyNum);
-                let animalWin = duLieuMap[item.numTe] || '';
-                let actualKey = getQinQiShuHuaByAnimal(animalWin);
-                let isWin = actualKey !== "" && predicted.includes(actualKey);
-                evaluatedDoneList.push({ item, isWin });
-            }
-
-            let checkLatestMisses = 0;
-            for (let i = evaluatedDoneList.length - 1; i >= 0; i--) {
-                if (!evaluatedDoneList[i].isWin) {
-                    checkLatestMisses++;
-                } else {
-                    break;
-                }
-            }
-
-            let cutoffIndex = evaluatedDoneList.length;
-            if (checkLatestMisses < 3) {
-                let consecutiveMisses = 0;
-                for (let i = evaluatedDoneList.length - 1; i >= 0; i--) {
-                    if (!evaluatedDoneList[i].isWin) {
-                        consecutiveMisses++;
-                        if (consecutiveMisses >= 3) {
-                            cutoffIndex = i + 1;
-                            break;
-                        }
-                    } else {
-                        consecutiveMisses = 0;
-                    }
-                }
-            }
-
             let nextKyNum = maxKyNum + 1;
             let predictNext = getPredictQinQiShuHuaForKy(nextKyNum);
             let kyStrNext = String(nextKyNum).padStart(3, '0');
@@ -217,29 +182,27 @@
             let htmlNextKy = `<p><span style="font-size:large;">${kyStrNext}期【琴棋书画】?【</span><span style="color:#FF0000;font-size:large;">${predictNext}</span><span style="font-size:large;">】开:？00准</span></p>`;
 
             let historyOutputs = [];
-            if (checkLatestMisses < 3) {
-                for (let i = cutoffIndex; i < doneList.length; i++) {
-                    let item = doneList[i];
-                    let predicted = getPredictQinQiShuHuaForKy(item.kyNum);
-                    let animalWin = duLieuMap[item.numTe] || '';
-                    let actualKey = getQinQiShuHuaByAnimal(animalWin);
-                    let isWin = actualKey !== "" && predicted.includes(actualKey);
+            for (let i = 0; i < doneList.length; i++) {
+                let item = doneList[i];
+                let predicted = getPredictQinQiShuHuaForKy(item.kyNum);
+                let animalWin = duLieuMap[item.numTe] || '';
+                let actualKey = getQinQiShuHuaByAnimal(animalWin);
+                let isWin = actualKey !== "" && predicted.includes(actualKey);
 
-                    if (isWin) {
-                        let resStrWin = animalWin + item.numTe;
-                        let kyStr = String(item.kyNum).padStart(3, '0');
-                        
-                        let formattedPredict = "";
-                        for (let char of predicted) {
-                            if (char === actualKey) {
-                                formattedPredict += `<span style="background-color: yellow; color: rgb(255, 0, 0);">${char}</span>`;
-                            } else {
-                                formattedPredict += char;
-                            }
+                if (isWin) {
+                    let resStrWin = animalWin + item.numTe;
+                    let kyStr = String(item.kyNum).padStart(3, '0');
+                    
+                    let formattedPredict = "";
+                    for (let char of predicted) {
+                        if (char === actualKey) {
+                            formattedPredict += `<span style="background-color: yellow; color: rgb(255, 0, 0);">${char}</span>`;
+                        } else {
+                            formattedPredict += char;
                         }
-
-                        historyOutputs.push(`<p><span style="font-size:large;">${kyStr}期【琴棋书画】?【</span><span style="color:#FF0000;font-size:large;">${formattedPredict}</span><span style="font-size:large;">】开:${resStrWin}准</span></p>`);
                     }
+
+                    historyOutputs.push(`<p><span style="font-size:large;">${kyStr}期【琴棋书画】?【</span><span style="color:#FF0000;font-size:large;">${formattedPredict}</span><span style="font-size:large;">】开:${resStrWin}准</span></p>`);
                 }
             }
             historyOutputs.reverse();

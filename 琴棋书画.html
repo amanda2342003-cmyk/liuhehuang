@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>澳门六合彩『琴棋书画』精心研制！</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 5px;
+            background-color: #fff;
+            color: #000;
+        }
+        .content {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .win-animal {
+            color: #FF0000;
+            background-color: yellow;
+        }
+    </style>
+</head>
+<body>
+
+<div id="content-container" class="content"></div>
+
+<script>
+    const SPREADSHEET_ID = '19wtMwveTJ_eW09pp7ANQj1NkLNbHIA4kWLsoNAk5Xd8';
+    const SHEET_NAME_KQ = 'KQ_AOMEN';
+    const SHEET_NAME_DULIEU = 'DULIEU';
+
+    const URL_KQ = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME_KQ}`;
+    const URL_DULIEU = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME_DULIEU}`;
+
+    let duLieuMap = {};
+
+    const QINQISHUHUAH_MAP = {
+        "棋": ["鼠", "牛", "狗"],
+        "书": ["马", "龙", "虎"],
+        "画": ["羊", "猴", "猪"],
+        "琴": ["兔", "蛇", "鸡"]
+    };
+
+    const STATIC_PREDICTIONS = {
+        1: "画书", 2: "琴书", 3: "琴棋", 4: "棋书", 5: "琴棋", 6: "琴书", 7: "画书", 8: "琴棋", 9: "棋书", 10: "琴棋",
+        11: "琴书", 12: "画书", 13: "琴棋", 14: "棋书", 15: "琴棋", 16: "琴书", 17: "画书", 18: "琴棋", 19: "棋书", 20: "琴棋",
+        21: "琴书", 22: "画书", 23: "琴棋", 24: "棋书", 25: "琴棋", 26: "琴书", 27: "画书", 28: "琴棋", 29: "棋书", 30: "琴棋",
+        31: "琴书", 32: "画书", 33: "琴棋", 34: "棋书", 35: "琴棋", 36: "琴书", 37: "画书", 38: "琴棋", 39: "棋书", 40: "琴棋",
+        41: "琴书", 42: "画书", 43: "琴棋", 44: "棋书", 45: "琴棋", 46: "琴书", 47: "画书", 48: "琴棋", 49: "棋书", 50: "琴棋",
+        51: "琴书", 52: "画书", 53: "琴棋", 54: "棋书", 55: "琴棋", 56: "琴书", 57: "画书", 58: "琴棋", 59: "棋书", 60: "琴棋",
+        61: "琴书", 62: "画书", 63: "琴棋", 64: "棋书", 65: "琴棋", 66: "琴书", 67: "画书", 68: "琴棋", 69: "棋书", 70: "琴棋",
+        71: "琴书", 72: "画书", 73: "琴棋", 74: "棋书", 75: "琴棋", 76: "琴书", 77: "画书", 78: "琴棋", 79: "棋书", 80: "琴棋",
+        81: "琴书", 82: "画书", 83: "琴棋", 84: "棋书", 85: "琴棋", 86: "琴书", 87: "画书", 88: "琴棋", 89: "棋书", 90: "琴棋",
+        91: "琴书", 92: "画书", 93: "琴棋", 94: "棋书", 95: "琴棋", 96: "琴书", 97: "画书", 98: "琴棋", 99: "棋书", 100: "琴棋",
+        101: "琴书", 102: "画书", 103: "琴棋", 104: "棋书", 105: "琴棋", 106: "琴书", 107: "画书", 108: "琴棋", 109: "棋书", 110: "琴棋",
+        111: "琴书", 112: "画书", 113: "琴棋", 114: "棋书", 115: "琴棋", 116: "琴书", 117: "画书", 118: "琴棋", 119: "棋书", 120: "琴棋",
+        121: "琴书", 122: "画书", 123: "琴棋", 124: "棋书", 125: "琴棋", 126: "琴书", 127: "画书", 128: "琴棋", 129: "棋书", 130: "琴棋",
+        131: "琴书", 132: "画书", 133: "琴棋", 134: "棋书", 135: "琴棋", 136: "琴书", 137: "画书", 138: "琴棋", 139: "棋书", 140: "琴棋",
+        141: "琴书", 142: "画书", 143: "琴棋", 144: "棋书", 145: "琴棋", 146: "琴书", 147: "画书", 148: "琴棋", 149: "棋书", 150: "琴棋",
+        151: "琴书", 152: "画书", 153: "琴棋", 154: "棋书", 155: "琴棋", 156: "琴书", 157: "画书", 158: "琴棋", 159: "棋书", 160: "琴棋",
+        161: "琴书", 162: "画书", 163: "琴棋", 164: "棋书", 165: "琴棋", 166: "琴书", 167: "画书", 168: "琴棋", 169: "棋书", 170: "琴棋",
+        171: "琴书", 172: "画书", 173: "琴棋", 174: "棋书", 175: "琴棋", 176: "琴书", 177: "画书", 178: "琴棋", 179: "棋书", 180: "琴棋",
+        181: "琴书", 182: "画书", 183: "琴棋", 184: "棋书", 185: "琴棋", 186: "琴书", 187: "画书", 188: "琴棋", 189: "棋书", 190: "琴棋",
+        191: "琴书", 192: "画书", 193: "琴棋", 194: "棋书", 195: "琴棋", 196: "琴书", 197: "画书", 198: "琴棋", 199: "棋书", 200: "琴棋",
+        201: "琴书", 202: "画书", 203: "琴棋", 204: "棋书", 205: "琴棋", 206: "琴书", 207: "画书", 208: "琴棋", 209: "棋书", 210: "琴棋",
+        211: "琴书", 212: "画书", 213: "琴棋", 214: "棋书", 215: "琴棋", 216: "琴书", 217: "画书", 218: "琴棋", 219: "棋书", 220: "琴棋",
+        221: "琴书", 222: "画书", 223: "琴棋", 224: "棋书", 225: "琴棋", 226: "琴书", 227: "画书", 228: "琴棋", 229: "棋书", 230: "琴棋",
+        231: "琴书", 232: "画书", 233: "琴棋", 234: "棋书", 235: "琴棋", 236: "琴书", 237: "画书", 238: "琴棋", 239: "棋书", 240: "琴棋",
+        241: "琴书", 242: "画书", 243: "琴棋", 244: "棋书", 245: "琴棋", 246: "琴书", 247: "画书", 248: "琴棋", 249: "棋书", 250: "琴棋",
+        251: "琴书", 252: "画书", 253: "琴棋", 254: "棋书", 255: "琴棋", 256: "琴书", 257: "画书", 258: "琴棋", 259: "棋书", 260: "琴棋",
+        261: "琴书", 262: "画书", 263: "琴棋", 264: "棋书", 265: "琴棋", 266: "琴书", 267: "画书", 268: "琴棋", 269: "棋书", 270: "琴棋",
+        271: "琴书", 272: "画书", 273: "琴棋", 274: "棋书", 275: "琴棋", 276: "琴书", 277: "画书", 278: "琴棋", 279: "棋书", 280: "琴棋",
+        281: "琴书", 282: "画书", 283: "琴棋", 284: "棋书", 285: "琴棋", 286: "琴书", 287: "画书", 288: "琴棋", 289: "棋书", 290: "琴棋",
+        291: "琴书", 292: "画书", 293: "琴棋", 294: "棋书", 295: "琴棋", 296: "琴书", 297: "画书", 298: "琴棋", 299: "棋书", 300: "琴棋",
+        301: "琴书", 302: "画书", 303: "琴棋", 304: "棋书", 305: "琴棋", 306: "琴书", 307: "画书", 308: "琴棋", 309: "棋书", 310: "琴棋",
+        311: "琴书", 312: "画书", 313: "琴棋", 314: "棋书", 315: "琴棋", 316: "琴书", 317: "画书", 318: "琴棋", 319: "棋书", 320: "琴棋",
+        321: "琴书", 322: "画书", 323: "琴棋", 324: "棋书", 325: "琴棋", 326: "琴书", 327: "画书", 328: "琴棋", 329: "棋书", 330: "琴棋",
+        331: "琴书", 332: "画书", 333: "琴棋", 344: "棋书", 335: "琴棋", 336: "琴书", 337: "画书", 338: "琴棋", 339: "棋书", 340: "琴棋",
+        341: "琴书", 342: "画书", 343: "琴棋", 344: "棋书", 345: "琴棋", 346: "琴书", 347: "画书", 348: "琴棋", 349: "棋书", 350: "琴棋",
+        351: "琴书", 352: "画书", 353: "琴棋", 354: "棋书", 355: "琴棋", 356: "琴书", 357: "画书", 358: "琴棋", 359: "棋书", 360: "琴棋",
+        361: "琴书", 362: "画书", 363: "琴棋", 364: "棋书", 365: "琴棋", 366: "画书"
+    };
+
+    function fetchJSONP(url) {
+        return fetch(url)
+            .then(res => res.text())
+            .then(text => {
+                const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
+                if (match && match[1]) return JSON.parse(match[1]);
+                throw new Error(" ");
+            });
+    }
+
+    function getPredictQinQiShuHuaForKy(kyNum) {
+        if (STATIC_PREDICTIONS[kyNum]) {
+            return STATIC_PREDICTIONS[kyNum];
+        }
+        const options = ["琴", "棋", "书", "画"];
+        let idx = (kyNum - 1) % 4;
+        let p1 = options[idx];
+        let p2 = options[(idx + 1) % 4];
+        return p1 + p2;
+    }
+
+    function getQinQiShuHuaByAnimal(animalStr) {
+        for (let key in QINQISHUHUAH_MAP) {
+            if (QINQISHUHUAH_MAP[key].includes(animalStr)) {
+                return key;
+            }
+        }
+        return "";
+    }
+
+    function formatTwoDigits(val) {
+        let num = parseInt(String(val).replace(/\D/g, ''), 10);
+        if (isNaN(num)) return '';
+        return String(num).padStart(2, '0');
+    }
+
+    async function initPredict() {
+        try {
+            const rawRules = await fetchJSONP(URL_DULIEU);
+            if (rawRules.table && rawRules.table.rows) {
+                rawRules.table.rows.forEach(r => {
+                    if (r.c && r.c[0] && r.c[0].v !== null && r.c[0].v !== undefined) {
+                        let formattedNum = formatTwoDigits(r.c[0].v);
+                        let animal = (r.c[1] && r.c[1].v !== null && r.c[1].v !== undefined) ? String(r.c[1].v).trim() : '';
+                        if (formattedNum && animal) {
+                            duLieuMap[formattedNum] = animal;
+                        }
+                    }
+                });
+            }
+
+            const rawKQ = await fetchJSONP(URL_KQ);
+            const rows = rawKQ.table.rows;
+            let parsedList = [];
+            let maxKyNum = 0;
+
+            if (rows) {
+                for (let i = 0; i < rows.length; i++) {
+                    const r = rows[i].c;
+                    if (!r || !r[0] || r[0].v === null || r[0].v === undefined) continue;
+                    
+                    let kyRaw = String(r[0].v).trim();
+                    let kyOnlyNum = parseInt(kyRaw.replace(/\D/g, ''), 10) || 0;
+                    
+                    let numTeFormatted = '';
+                    if (r[7] && r[7].v !== null && r[7].v !== undefined && String(r[7].v).trim() !== '' && String(r[7].v).trim() !== '00') {
+                        numTeFormatted = formatTwoDigits(r[7].v);
+                    }
+
+                    if (kyOnlyNum > 0) {
+                        parsedList.push({
+                            kyNum: kyOnlyNum,
+                            numTe: numTeFormatted
+                        });
+                        if (kyOnlyNum > maxKyNum) {
+                            maxKyNum = kyOnlyNum;
+                        }
+                    }
+                }
+            }
+
+            let doneList = [];
+            let limitRange = Math.min(parsedList.length, 365);
+            let startIndex = parsedList.length - limitRange;
+
+            for (let i = startIndex; i < parsedList.length; i++) {
+                let item = parsedList[i];
+                let isDone = item.numTe !== '' && item.numTe !== '00';
+                if (isDone) {
+                    doneList.push(item);
+                }
+            }
+
+            let evaluatedDoneList = [];
+            for (let i = 0; i < doneList.length; i++) {
+                let item = doneList[i];
+                let predicted = getPredictQinQiShuHuaForKy(item.kyNum);
+                let animalWin = duLieuMap[item.numTe] || '';
+                let actualKey = getQinQiShuHuaByAnimal(animalWin);
+                let isWin = actualKey !== "" && predicted.includes(actualKey);
+                evaluatedDoneList.push({ item, isWin });
+            }
+
+            let checkLatestMisses = 0;
+            for (let i = evaluatedDoneList.length - 1; i >= 0; i--) {
+                if (!evaluatedDoneList[i].isWin) {
+                    checkLatestMisses++;
+                } else {
+                    break;
+                }
+            }
+
+            let cutoffIndex = evaluatedDoneList.length;
+            if (checkLatestMisses < 3) {
+                let consecutiveMisses = 0;
+                for (let i = evaluatedDoneList.length - 1; i >= 0; i--) {
+                    if (!evaluatedDoneList[i].isWin) {
+                        consecutiveMisses++;
+                        if (consecutiveMisses >= 3) {
+                            cutoffIndex = i + 1;
+                            break;
+                        }
+                    } else {
+                        consecutiveMisses = 0;
+                    }
+                }
+            }
+
+            let nextKyNum = maxKyNum + 1;
+            let predictNext = getPredictQinQiShuHuaForKy(nextKyNum);
+            let kyStrNext = String(nextKyNum).padStart(3, '0');
+
+            let htmlNextKy = `<p><span style="font-size:large;">${kyStrNext}期【琴棋书画】?【</span><span style="color:#FF0000;font-size:large;">${predictNext}</span><span style="font-size:large;">】开:？00准</span></p>`;
+
+            let historyOutputs = [];
+            if (checkLatestMisses < 3) {
+                for (let i = cutoffIndex; i < doneList.length; i++) {
+                    let item = doneList[i];
+                    let predicted = getPredictQinQiShuHuaForKy(item.kyNum);
+                    let animalWin = duLieuMap[item.numTe] || '';
+                    let actualKey = getQinQiShuHuaByAnimal(animalWin);
+                    let isWin = actualKey !== "" && predicted.includes(actualKey);
+
+                    if (isWin) {
+                        let resStrWin = animalWin + item.numTe;
+                        let kyStr = String(item.kyNum).padStart(3, '0');
+                        
+                        let formattedPredict = "";
+                        for (let char of predicted) {
+                            if (char === actualKey) {
+                                formattedPredict += `<span style="background-color: yellow; color: rgb(255, 0, 0);">${char}</span>`;
+                            } else {
+                                formattedPredict += char;
+                            }
+                        }
+
+                        historyOutputs.push(`<p><span style="font-size:large;">${kyStr}期【琴棋书画】?【</span><span style="color:#FF0000;font-size:large;">${formattedPredict}</span><span style="font-size:large;">】开:${resStrWin}准</span></p>`);
+                    }
+                }
+            }
+            historyOutputs.reverse();
+
+            let finalOutputs = [htmlNextKy, ...historyOutputs];
+
+            let currentCount = finalOutputs.length;
+            if (currentCount === 1) {
+                let kyStr1 = String(nextKyNum + 1).padStart(3, '0');
+                let kyStr2 = String(nextKyNum + 2).padStart(3, '0');
+                let defaultHtml1 = `<p><span style="font-size:large;">${kyStr1}期【琴棋书画】?【</span><span style="color:#FF0000;font-size:large;">發發</span><span style="font-size:large;">】开:？00准</span></p>`;
+                let defaultHtml2 = `<p><span style="font-size:large;">${kyStr2}期【琴棋书画】?【</span><span style="color:#FF0000;font-size:large;">發發</span><span style="font-size:large;">】开:？00准</span></p>`;
+                finalOutputs.unshift(defaultHtml1);
+                finalOutputs.unshift(defaultHtml2);
+            } else if (currentCount === 2) {
+                let kyStrExtra = String(nextKyNum + 1).padStart(3, '0');
+                let defaultHtmlExtra = `<p><span style="font-size:large;">${kyStrExtra}期【琴棋书画】?【</span><span style="color:#FF0000;font-size:large;">發發</span><span style="font-size:large;">】开:？00准</span></p>`;
+                finalOutputs.unshift(defaultHtmlExtra);
+            }
+
+            document.getElementById('content-container').innerHTML = finalOutputs.join('');
+
+        } catch (err) {
+            console.error(err);
+            document.getElementById('content-container').innerHTML = ' ';
+        }
+    }
+    initPredict();
+</script>
+
+</body>
+</html>

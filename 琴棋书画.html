@@ -175,6 +175,33 @@
                 }
             }
 
+            // Đánh giá kết quả thắng/thua từng kỳ
+            let evaluatedDoneList = [];
+            for (let i = 0; i < doneList.length; i++) {
+                let item = doneList[i];
+                let predicted = getPredictQinQiShuHuaForKy(item.kyNum);
+                let animalWin = duLieuMap[item.numTe] || '';
+                let actualKey = getQinQiShuHuaByAnimal(animalWin);
+                let isWin = actualKey !== "" && predicted.includes(actualKey);
+                evaluatedDoneList.push({ item, isWin, predicted, animalWin, actualKey });
+            }
+
+            // Xử lý logic cắt khi sai liên tiếp
+            let cutoffIndex = 0;
+            let consecutiveMisses = 0;
+            for (let i = 0; i < evaluatedDoneList.length; i++) {
+                if (!evaluatedDoneList[i].isWin) {
+                    consecutiveMisses++;
+                    if (consecutiveMisses >= 3) {
+                        // Nếu sai liên tiếp 3 kỳ, điểm bắt đầu tính lại lịch sử sẽ dời về ngay sau kỳ sai thứ 3
+                        cutoffIndex = i + 1;
+                        consecutiveMisses = 0; // Reset đếm sai liên tiếp
+                    }
+                } else {
+                    consecutiveMisses = 0;
+                }
+            }
+
             let nextKyNum = maxKyNum + 1;
             let predictNext = getPredictQinQiShuHuaForKy(nextKyNum);
             let kyStrNext = String(nextKyNum).padStart(3, '0');
@@ -182,20 +209,15 @@
             let htmlNextKy = `<p><span style="font-size:large;">${kyStrNext}期【琴棋书画】?【</span><span style="color:#FF0000;font-size:large;">${predictNext}</span><span style="font-size:large;">】开:？00准</span></p>`;
 
             let historyOutputs = [];
-            for (let i = 0; i < doneList.length; i++) {
-                let item = doneList[i];
-                let predicted = getPredictQinQiShuHuaForKy(item.kyNum);
-                let animalWin = duLieuMap[item.numTe] || '';
-                let actualKey = getQinQiShuHuaByAnimal(animalWin);
-                let isWin = actualKey !== "" && predicted.includes(actualKey);
-
-                if (isWin) {
-                    let resStrWin = animalWin + item.numTe;
-                    let kyStr = String(item.kyNum).padStart(3, '0');
+            for (let i = cutoffIndex; i < evaluatedDoneList.length; i++) {
+                let entry = evaluatedDoneList[i];
+                if (entry.isWin) {
+                    let resStrWin = entry.animalWin + entry.item.numTe;
+                    let kyStr = String(entry.item.kyNum).padStart(3, '0');
                     
                     let formattedPredict = "";
-                    for (let char of predicted) {
-                        if (char === actualKey) {
+                    for (let char of entry.predicted) {
+                        if (char === entry.actualKey) {
                             formattedPredict += `<span style="background-color: yellow; color: rgb(255, 0, 0);">${char}</span>`;
                         } else {
                             formattedPredict += char;

@@ -164,53 +164,6 @@
                 }
             }
 
-            let doneList = [];
-            let limitRange = Math.min(parsedList.length, 365);
-            let startIndex = parsedList.length - limitRange;
-
-            for (let i = startIndex; i < parsedList.length; i++) {
-                let item = parsedList[i];
-                let isDone = item.numTe !== '' && item.numTe !== '00';
-                if (isDone) {
-                    doneList.push(item);
-                }
-            }
-
-            let evaluatedDoneList = [];
-            for (let i = 0; i < doneList.length; i++) {
-                let item = doneList[i];
-                let predicted = getPredictQinQiShuHuaForKy(item.kyNum);
-                let animalWin = duLieuMap[item.numTe] || '';
-                let actualKey = getQinQiShuHuaByAnimal(animalWin);
-                let isWin = actualKey !== "" && predicted.includes(actualKey);
-                evaluatedDoneList.push({ item, isWin });
-            }
-
-            let checkLatestMisses = 0;
-            for (let i = evaluatedDoneList.length - 1; i >= 0; i--) {
-                if (!evaluatedDoneList[i].isWin) {
-                    checkLatestMisses++;
-                } else {
-                    break;
-                }
-            }
-
-            let cutoffIndex = evaluatedDoneList.length;
-            if (checkLatestMisses < 3) {
-                let consecutiveMisses = 0;
-                for (let i = evaluatedDoneList.length - 1; i >= 0; i--) {
-                    if (!evaluatedDoneList[i].isWin) {
-                        consecutiveMisses++;
-                        if (consecutiveMisses >= 3) {
-                            cutoffIndex = i + 1;
-                            break;
-                        }
-                    } else {
-                        consecutiveMisses = 0;
-                    }
-                }
-            }
-
             let nextKyNum = maxKyNum + 1;
             let predictNext = getPredictQinQiShuHuaForKy(nextKyNum);
             let kyStrNext = String(nextKyNum).padStart(3, '0');
@@ -218,9 +171,12 @@
             let htmlNextKy = `<p>\n\t<span style="font-family:微软雅黑;font-size:17.3333px;text-align:-webkit-center;background-color:#FFFFFF;">${kyStrNext}期:【风雷云雨】?『<span style="color: #FF0000">${predictNext}</span>』开:<span style="color: #FF0000">？00</span>准</span> \n</p>`;
 
             let historyOutputs = [];
-            if (checkLatestMisses < 3) {
-                for (let i = cutoffIndex; i < doneList.length; i++) {
-                    let item = doneList[i];
+
+            for (let i = 0; i < parsedList.length; i++) {
+                let item = parsedList[i];
+                let isDone = item.numTe !== '' && item.numTe !== '00';
+                
+                if (isDone) {
                     let predicted = getPredictQinQiShuHuaForKy(item.kyNum);
                     let animalWin = duLieuMap[item.numTe] || '';
                     let actualKey = getQinQiShuHuaByAnimal(animalWin);
@@ -243,6 +199,7 @@
                     }
                 }
             }
+
             historyOutputs.reverse();
 
             let finalOutputs = [htmlNextKy, ...historyOutputs];

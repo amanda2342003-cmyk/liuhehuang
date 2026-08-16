@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>澳门六合彩『风雷云雨』精心研制！</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 5px;
+            background-color: #fff;
+            color: #000;
+        }
+        .content {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .win-animal {
+            color: #FF0000;
+            background-color: yellow;
+        }
+    </style>
+</head>
+<body>
+
+<div id="content-container" class="content"></div>
+
+<script>
+    const SPREADSHEET_ID = '19wtMwveTJ_eW09pp7ANQj1NkLNbHIA4kWLsoNAk5Xd8';
+    const SHEET_NAME_KQ = 'KQ_AOMEN';
+    const SHEET_NAME_DULIEU = 'DULIEU';
+
+    const URL_KQ = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME_KQ}`;
+    const URL_DULIEU = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME_DULIEU}`;
+
+    let duLieuMap = {};
+
+    const QINQISHUHUAH_MAP = {
+        "风": ["虎", "兔", "龙"],
+        "雷": ["蛇", "马", "羊"],
+        "云": ["猴", "鸡", "狗"],
+        "雨": ["鼠", "牛", "猪"]
+    };
+
+    const STATIC_PREDICTIONS = {
+        1: "雨云雷", 2: "风云雨", 3: "风雷云", 4: "雷云雨", 5: "风雷雨", 6: "风云雷", 7: "雨云风", 8: "风雷云", 9: "雷云雨", 10: "风雷雨",
+        11: "风云雷", 12: "雨云风", 13: "风雷云", 14: "雷云雨", 15: "风雷雨", 16: "风云雷", 17: "雨云风", 18: "风雷云", 19: "雷云雨", 20: "风雷雨",
+        21: "风云雷", 22: "雨云风", 23: "风雷云", 24: "雷云雨", 25: "风雷雨", 26: "风云雷", 27: "雨云风", 28: "风雷云", 29: "雷云雨", 30: "风雷雨",
+        31: "风云雷", 32: "雨云风", 33: "风雷云", 34: "雷云雨", 35: "风雷雨", 36: "风云雷", 37: "雨云风", 38: "风雷云", 39: "雷云雨", 40: "风雷雨",
+        41: "风云雷", 42: "雨云风", 43: "风雷云", 44: "雷云雨", 45: "风雷雨", 46: "风云雷", 47: "雨云风", 48: "风雷云", 49: "雷云雨", 50: "风雷雨",
+        51: "风云雷", 52: "雨云风", 53: "风雷云", 54: "雷云雨", 55: "风雷雨", 56: "风云雷", 57: "雨云风", 58: "风雷云", 59: "雷云雨", 60: "风雷雨",
+        61: "风云雷", 62: "雨云风", 63: "风雷云", 64: "雷云雨", 65: "风雷雨", 66: "风云雷", 67: "雨云风", 68: "风雷云", 69: "雷云雨", 70: "风雷雨",
+        71: "风云雷", 72: "雨云风", 73: "风雷云", 74: "雷云雨", 75: "风雷雨", 76: "风云雷", 77: "雨云风", 78: "风雷云", 79: "雷云雨", 80: "风雷雨",
+        81: "风云雷", 82: "雨云风", 83: "风雷云", 84: "雷云雨", 85: "风雷雨", 86: "风云雷", 87: "雨云风", 88: "风雷云", 89: "雷云雨", 90: "风雷雨",
+        91: "风云雷", 92: "雨云风", 93: "风雷云", 94: "雷云雨", 95: "风雷雨", 96: "风云雷", 97: "雨云风", 98: "风雷云", 99: "雷云雨", 100: "风雷雨",
+        101: "风云雷", 102: "雨云风", 103: "风雷云", 104: "雷云雨", 105: "风雷雨", 106: "风云雷", 107: "雨云风", 108: "风雷云", 109: "雷云雨", 110: "风雷雨",
+        111: "风云雷", 112: "雨云风", 113: "风雷云", 114: "雷云雨", 115: "风雷雨", 116: "风云雷", 117: "雨云风", 118: "风雷云", 119: "雷云雨", 120: "风雷雨",
+        121: "风云雷", 122: "雨云风", 123: "风雷云", 124: "雷云雨", 125: "风雷雨", 126: "风云雷", 127: "雨云风", 128: "风雷云", 129: "雷云雨", 130: "风雷雨",
+        131: "风云雷", 132: "雨云风", 133: "风雷云", 134: "雷云雨", 135: "风雷雨", 136: "风云雷", 137: "雨云风", 138: "风雷云", 139: "雷云雨", 140: "风雷雨",
+        141: "风云雷", 142: "雨云风", 143: "风雷云", 144: "雷云雨", 145: "风雷雨", 146: "风云雷", 147: "雨云风", 148: "风雷云", 149: "雷云雨", 150: "风雷雨",
+        151: "风云雷", 152: "雨云风", 153: "风雷云", 154: "雷云雨", 155: "风雷雨", 156: "风云雷", 157: "雨云风", 158: "风雷云", 159: "雷云雨", 160: "风雷雨",
+        161: "风云雷", 162: "雨云风", 163: "风雷云", 164: "雷云雨", 165: "风雷雨", 166: "风云雷", 167: "雨云风", 168: "风雷云", 169: "雷云雨", 170: "风雷雨",
+        171: "风云雷", 172: "雨云风", 173: "风雷云", 174: "雷云雨", 175: "风雷雨", 176: "风云雷", 177: "雨云风", 178: "风雷云", 179: "雷云雨", 180: "风雷雨",
+        181: "风云雷", 182: "雨云风", 183: "风雷云", 184: "雷云雨", 185: "风雷雨", 186: "风云雷", 187: "雨云风", 188: "风雷云", 189: "雷云雨", 190: "风雷雨",
+        191: "风云雷", 192: "雨云风", 193: "风雷云", 194: "雷云雨", 195: "风雷雨", 196: "风云雷", 197: "雨云风", 198: "风雷云", 199: "雷云雨", 200: "风雷雨",
+        201: "风云雷", 202: "雨云风", 203: "风雷云", 204: "雷云雨", 205: "风雷雨", 206: "风云雷", 207: "雨云风", 208: "风雷云", 209: "雷云雨", 210: "风雷雨",
+        211: "风云雷", 212: "雨云风", 213: "风雷云", 214: "雷云雨", 215: "风雷雨", 216: "风云雷", 217: "雨云风", 218: "风雷云", 219: "雷云雨", 220: "风雷雨",
+        221: "风云雷", 222: "雨云风", 223: "风雷云", 224: "雷云雨", 225: "风雷雨", 226: "风云雷", 227: "雨云风", 228: "风雷云", 229: "雷云雨", 230: "风雷雨",
+        231: "风云雷", 232: "雨云风", 233: "风雷云", 234: "雷云雨", 235: "风雷雨", 236: "风云雷", 237: "雨云风", 238: "风雷云", 239: "雷云雨", 240: "风雷雨",
+        241: "风云雷", 242: "雨云风", 243: "风雷云", 244: "雷云雨", 245: "风雷雨", 246: "风云雷", 247: "雨云风", 248: "风雷云", 249: "雷云雨", 250: "风雷雨",
+        251: "风云雷", 252: "雨云风", 253: "风雷云", 254: "雷云雨", 255: "风雷雨", 256: "风云雷", 257: "雨云风", 258: "风雷云", 259: "雷云雨", 260: "风雷雨",
+        261: "风云雷", 262: "雨云风", 263: "风雷云", 264: "雷云雨", 265: "风雷雨", 266: "风云雷", 267: "雨云风", 268: "风雷云", 269: "雷云雨", 270: "风雷雨",
+        271: "风云雷", 272: "雨云风", 273: "风雷云", 274: "雷云雨", 275: "风雷雨", 276: "风云雷", 277: "雨云风", 278: "风雷云", 279: "雷云雨", 280: "风雷雨",
+        281: "风云雷", 282: "雨云风", 283: "风雷云", 284: "雷云雨", 285: "风雷雨", 286: "风云雷", 287: "雨云风", 288: "风雷云", 289: "雷云雨", 290: "风雷雨",
+        291: "风云雷", 292: "雨云风", 293: "风雷云", 294: "雷云雨", 295: "风雷雨", 296: "风云雷", 297: "雨云风", 298: "风雷云", 299: "雷云雨", 300: "风雷雨",
+        301: "风云雷", 302: "雨云风", 303: "风雷云", 304: "雷云雨", 305: "风雷雨", 306: "风云雷", 307: "雨云风", 308: "风雷云", 309: "雷云雨", 310: "风雷雨",
+        311: "风云雷", 312: "雨云风", 313: "风雷云", 314: "雷云雨", 315: "风雷雨", 316: "风云雷", 317: "雨云风", 318: "风雷云", 319: "雷云雨", 320: "风雷雨",
+        321: "风云雷", 322: "雨云风", 323: "风雷云", 324: "雷云雨", 325: "风雷雨", 326: "风云雷", 327: "雨云风", 328: "风雷云", 329: "雷云雨", 330: "风雷雨",
+        331: "风云雷", 332: "雨云风", 333: "风雷云", 334: "雷云雨", 335: "风雷雨", 336: "风云雷", 337: "雨云风", 338: "风雷云", 339: "雷云雨", 340: "风雷雨",
+        341: "风云雷", 342: "雨云风", 343: "风雷云", 344: "雷云雨", 345: "风雷雨", 346: "风云雷", 347: "雨云风", 348: "风雷云", 349: "雷云雨", 350: "风雷雨",
+        351: "风云雷", 352: "雨云风", 353: "风雷云", 354: "雷云雨", 355: "风雷雨", 356: "风云雷", 357: "雨云风", 358: "风雷云", 359: "雷云雨", 360: "风雷雨",
+        361: "风云雷", 362: "雨云风", 363: "风雷云", 364: "雷云雨", 365: "风雷雨", 366: "雨云风"
+    };
+
+    function fetchJSONP(url) {
+        return fetch(url)
+            .then(res => res.text())
+            .then(text => {
+                const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
+                if (match && match[1]) return JSON.parse(match[1]);
+                throw new Error(" ");
+            });
+    }
+
+    function getPredictQinQiShuHuaForKy(kyNum) {
+        if (STATIC_PREDICTIONS[kyNum]) {
+            return STATIC_PREDICTIONS[kyNum];
+        }
+        const options = ["风", "雷", "云", "雨"];
+        let idx = (kyNum - 1) % 4;
+        let p1 = options[idx];
+        let p2 = options[(idx + 1) % 4];
+        let p3 = options[(idx + 2) % 4];
+        return p1 + p2 + p3;
+    }
+
+    function getQinQiShuHuaByAnimal(animalStr) {
+        for (let key in QINQISHUHUAH_MAP) {
+            if (QINQISHUHUAH_MAP[key].includes(animalStr)) {
+                return key;
+            }
+        }
+        return "";
+    }
+
+    function formatTwoDigits(val) {
+        let num = parseInt(String(val).replace(/\D/g, ''), 10);
+        if (isNaN(num)) return '';
+        return String(num).padStart(2, '0');
+    }
+
+    async function initPredict() {
+        try {
+            const rawRules = await fetchJSONP(URL_DULIEU);
+            if (rawRules.table && rawRules.table.rows) {
+                rawRules.table.rows.forEach(r => {
+                    if (r.c && r.c[0] && r.c[0].v !== null && r.c[0].v !== undefined) {
+                        let formattedNum = formatTwoDigits(r.c[0].v);
+                        let animal = (r.c[1] && r.c[1].v !== null && r.c[1].v !== undefined) ? String(r.c[1].v).trim() : '';
+                        if (formattedNum && animal) {
+                            duLieuMap[formattedNum] = animal;
+                        }
+                    }
+                });
+            }
+
+            const rawKQ = await fetchJSONP(URL_KQ);
+            const rows = rawKQ.table.rows;
+            let parsedList = [];
+            let maxKyNum = 0;
+
+            if (rows) {
+                for (let i = 0; i < rows.length; i++) {
+                    const r = rows[i].c;
+                    if (!r || !r[0] || r[0].v === null || r[0].v === undefined) continue;
+                    
+                    let kyRaw = String(r[0].v).trim();
+                    let kyOnlyNum = parseInt(kyRaw.replace(/\D/g, ''), 10) || 0;
+                    
+                    let numTeFormatted = '';
+                    if (r[7] && r[7].v !== null && r[7].v !== undefined && String(r[7].v).trim() !== '' && String(r[7].v).trim() !== '00') {
+                        numTeFormatted = formatTwoDigits(r[7].v);
+                    }
+
+                    if (kyOnlyNum > 0) {
+                        parsedList.push({
+                            kyNum: kyOnlyNum,
+                            numTe: numTeFormatted
+                        });
+                        if (kyOnlyNum > maxKyNum) {
+                            maxKyNum = kyOnlyNum;
+                        }
+                    }
+                }
+            }
+
+            let doneList = [];
+            let limitRange = Math.min(parsedList.length, 365);
+            let startIndex = parsedList.length - limitRange;
+
+            for (let i = startIndex; i < parsedList.length; i++) {
+                let item = parsedList[i];
+                let isDone = item.numTe !== '' && item.numTe !== '00';
+                if (isDone) {
+                    doneList.push(item);
+                }
+            }
+
+            let evaluatedDoneList = [];
+            for (let i = 0; i < doneList.length; i++) {
+                let item = doneList[i];
+                let predicted = getPredictQinQiShuHuaForKy(item.kyNum);
+                let animalWin = duLieuMap[item.numTe] || '';
+                let actualKey = getQinQiShuHuaByAnimal(animalWin);
+                let isWin = actualKey !== "" && predicted.includes(actualKey);
+                evaluatedDoneList.push({ item, isWin });
+            }
+
+            let checkLatestMisses = 0;
+            for (let i = evaluatedDoneList.length - 1; i >= 0; i--) {
+                if (!evaluatedDoneList[i].isWin) {
+                    checkLatestMisses++;
+                } else {
+                    break;
+                }
+            }
+
+            let cutoffIndex = evaluatedDoneList.length;
+            if (checkLatestMisses < 3) {
+                let consecutiveMisses = 0;
+                for (let i = evaluatedDoneList.length - 1; i >= 0; i--) {
+                    if (!evaluatedDoneList[i].isWin) {
+                        consecutiveMisses++;
+                        if (consecutiveMisses >= 3) {
+                            cutoffIndex = i + 1;
+                            break;
+                        }
+                    } else {
+                        consecutiveMisses = 0;
+                    }
+                }
+            }
+
+            let nextKyNum = maxKyNum + 1;
+            let predictNext = getPredictQinQiShuHuaForKy(nextKyNum);
+            let kyStrNext = String(nextKyNum).padStart(3, '0');
+
+            let htmlNextKy = `<p>\n<span style="font-family:微软雅黑;font-size:17.3333px;text-align:-webkit-center;background-color:#FFFFFF;">${kyStrNext}期:【风雷云雨】?『<span style="color: #FF0000">${predictNext}</span>』开:<span style="color: #FF0000">？00</span>准</span> \n</p>`;
+
+            let historyOutputs = [];
+            if (checkLatestMisses < 3) {
+                for (let i = cutoffIndex; i < doneList.length; i++) {
+                    let item = doneList[i];
+                    let predicted = getPredictQinQiShuHuaForKy(item.kyNum);
+                    let animalWin = duLieuMap[item.numTe] || '';
+                    let actualKey = getQinQiShuHuaByAnimal(animalWin);
+                    let isWin = actualKey !== "" && predicted.includes(actualKey);
+
+                    if (isWin) {
+                        let resStrWin = animalWin + item.numTe;
+                        let kyStr = String(item.kyNum).padStart(3, '0');
+
+                        historyOutputs.push(`<p>\n<span style="font-family:微软雅黑;font-size:17.3333px;text-align:-webkit-center;background-color:#FFFFFF;">${kyStr}期:【风雷云雨】?『<span style="color: #FF0000">${predicted}</span>』开:<span style="color: #FF0000">${resStrWin}</span>准</span> \n</p>`);
+                    }
+                }
+            }
+            historyOutputs.reverse();
+
+            let finalOutputs = [htmlNextKy, ...historyOutputs];
+
+            let currentCount = finalOutputs.length;
+            if (currentCount === 1) {
+                let kyStr1 = String(nextKyNum + 1).padStart(3, '0');
+                let kyStr2 = String(nextKyNum + 2).padStart(3, '0');
+                let defaultHtml1 = `<p>\n<span style="font-family:微软雅黑;font-size:17.3333px;text-align:-webkit-center;background-color:#FFFFFF;">${kyStr1}期:【风雷云雨】?『<span style="color: #FF0000">發發發</span>』开:<span style="color: #FF0000">？00</span>准</span> \n</p>`;
+                let defaultHtml2 = `<p>\n<span style="font-family:微软雅黑;font-size:17.3333px;text-align:-webkit-center;background-color:#FFFFFF;">${kyStr2}期:【风雷云雨】?『<span style="color: #FF0000">發發發</span>』开:<span style="color: #FF0000">？00</span>准</span> \n</p>`;
+                finalOutputs.unshift(defaultHtml1);
+                finalOutputs.unshift(defaultHtml2);
+            } else if (currentCount === 2) {
+                let kyStrExtra = String(nextKyNum + 1).padStart(3, '0');
+                let defaultHtmlExtra = `<p>\n<span style="font-family:微软雅黑;font-size:17.3333px;text-align:-webkit-center;background-color:#FFFFFF;">${kyStrExtra}期:【风雷云雨】?『<span style="color: #FF0000">發發發</span>』开:<span style="color: #FF0000">？00</span>准</span> \n</p>`;
+                finalOutputs.unshift(defaultHtmlExtra);
+            }
+
+            document.getElementById('content-container').innerHTML = finalOutputs.join('');
+
+        } catch (err) {
+            console.error(err);
+            document.getElementById('content-container').innerHTML = ' ';
+        }
+    }
+    initPredict();
+</script>
+
+</body>
+</html>

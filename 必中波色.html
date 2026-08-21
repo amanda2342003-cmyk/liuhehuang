@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>两波中特</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 5px;
+            background-color: #fff;
+            color: #000;
+        }
+        .content {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<div id="content-container" class="content"></div>
+
+<script>
+    const SPREADSHEET_ID = '19wtMwveTJ_eW09pp7ANQj1NkLNbHIA4kWLsoNAk5Xd8';
+    const SHEET_NAME_KQ = 'KQ_AOMEN';
+    const SHEET_NAME_DULIEU = 'DULIEU';
+
+    const URL_KQ = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME_KQ}&_=${Date.now()}`;
+    const URL_DULIEU = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME_DULIEU}&_=${Date.now()}`;
+
+    let duLieuMap = {};
+
+    const COLOR_MAP = {
+        "红色": ["01", "02", "07", "08", "12", "13", "18", "19", "23", "24", "29", "30", "34", "35", "40", "45", "46"],
+        "蓝色": ["03", "04", "09", "10", "14", "15", "20", "25", "26", "31", "36", "37", "41", "42", "47", "48"],
+        "绿色": ["05", "06", "11", "16", "17", "21", "22", "27", "28", "32", "33", "38", "39", "43", "44", "49"]
+    };
+
+    // Bảng 366 kỳ dự đoán cố định do người dùng cung cấp
+    const STATIC_PREDICTIONS = {
+        1: ["蓝色", "红色"], 2: ["绿色", "蓝色"], 3: ["红色", "绿色"], 4: ["蓝色", "红色"], 5: ["绿色", "蓝色"], 6: ["蓝色", "红色"], 7: ["绿色", "蓝色"], 8: ["蓝色", "红色"], 9: ["红色", "绿色"], 10: ["绿色", "蓝色"],
+        11: ["红色", "绿色"], 12: ["绿色", "蓝色"], 13: ["红色", "绿色"], 14: ["蓝色", "红色"], 15: ["红色", "绿色"], 16: ["绿色", "蓝色"], 17: ["红色", "绿色"], 18: ["蓝色", "红色"], 19: ["红色", "绿色"], 20: ["蓝色", "红色"],
+        21: ["红色", "绿色"], 22: ["绿色", "蓝色"], 23: ["红色", "绿色"], 24: ["绿色", "蓝色"], 25: ["红色", "绿色"], 26: ["蓝色", "红色"], 27: ["绿色", "蓝色"], 28: ["蓝色", "红色"], 29: ["红色", "绿色"], 30: ["绿色", "蓝色"],
+        31: ["蓝色", "红色"], 32: ["绿色", "蓝色"], 33: ["红色", "绿色"], 34: ["绿色", "蓝色"], 35: ["蓝色", "红色"], 36: ["红色", "绿色"], 37: ["绿色", "蓝色"], 38: ["蓝色", "红色"], 39: ["红色", "绿色"], 40: ["绿色", "蓝色"],
+        41: ["红色", "绿色"], 42: ["绿色", "蓝色"], 43: ["红色", "绿色"], 44: ["绿色", "蓝色"], 45: ["红色", "绿色"], 46: ["蓝色", "红色"], 47: ["绿色", "蓝色"], 48: ["红色", "绿色"], 49: ["蓝色", "红色"], 50: ["绿色", "蓝色"],
+        51: ["蓝色", "红色"], 52: ["红色", "绿色"], 53: ["蓝色", "红色"], 54: ["绿色", "蓝色"], 55: ["蓝色", "红色"], 56: ["红色", "绿色"], 57: ["蓝色", "红色"], 58: ["红色", "绿色"], 59: ["绿色", "蓝色"], 60: ["红色", "绿色"],
+        61: ["绿色", "蓝色"], 62: ["红色", "绿色"], 63: ["蓝色", "红色"], 64: ["绿色", "蓝色"], 65: ["蓝色", "红色"], 66: ["绿色", "蓝色"], 67: ["蓝色", "红色"], 68: ["红色", "绿色"], 69: ["蓝色", "红色"], 70: ["绿色", "蓝色"],
+        71: ["蓝色", "红色"], 72: ["红色", "绿色"], 73: ["绿色", "蓝色"], 74: ["蓝色", "红色"], 75: ["红色", "绿色"], 76: ["绿色", "蓝色"], 77: ["蓝色", "红色"], 78: ["红色", "绿色"], 79: ["绿色", "蓝色"], 80: ["红色", "绿色"],
+        81: ["绿色", "蓝色"], 82: ["蓝色", "红色"], 83: ["绿色", "蓝色"], 84: ["红色", "绿色"], 85: ["绿色", "蓝色"], 86: ["蓝色", "红色"], 87: ["红色", "绿色"], 88: ["蓝色", "红色"], 89: ["绿色", "蓝色"], 90: ["红色", "绿色"],
+        91: ["蓝色", "红色"], 92: ["绿色", "蓝色"], 93: ["红色", "绿色"], 94: ["绿色", "蓝色"], 95: ["红色", "绿色"], 96: ["蓝色", "红色"], 97: ["绿色", "蓝色"], 98: ["红色", "绿色"], 99: ["蓝色", "红色"], 100: ["绿色", "蓝色"],
+        101: ["蓝色", "红色"], 102: ["红色", "绿色"], 103: ["蓝色", "红色"], 104: ["绿色", "蓝色"], 105: ["蓝色", "红色"], 106: ["绿色", "蓝色"], 107: ["红色", "绿色"], 108: ["蓝色", "红色"], 109: ["绿色", "蓝色"], 110: ["蓝色", "红色"],
+        111: ["绿色", "蓝色"], 112: ["红色", "绿色"], 113: ["绿色", "蓝色"], 114: ["红色", "绿色"], 115: ["绿色", "蓝色"], 116: ["红色", "绿色"], 117: ["绿色", "蓝色"], 118: ["蓝色", "红色"], 119: ["绿色", "蓝色"], 120: ["蓝色", "红色"],
+        121: ["绿色", "蓝色"], 122: ["蓝色", "红色"], 123: ["绿色", "蓝色"], 124: ["蓝色", "红色"], 125: ["绿色", "蓝色"], 126: ["蓝色", "红色"], 127: ["红色", "绿色"], 128: ["蓝色", "红色"], 129: ["红色", "绿色"], 130: ["绿色", "蓝色"],
+        131: ["红色", "绿色"], 132: ["绿色", "蓝色"], 133: ["红色", "绿色"], 134: ["绿色", "蓝色"], 135: ["红色", "绿色"], 136: ["蓝色", "红色"], 137: ["绿色", "蓝色"], 138: ["蓝色", "红色"], 139: ["绿色", "蓝色"], 140: ["蓝色", "红色"],
+        141: ["绿色", "蓝色"], 142: ["蓝色", "红色"], 143: ["绿色", "蓝色"], 144: ["红色", "绿色"], 145: ["蓝色", "红色"], 146: ["绿色", "蓝色"], 147: ["红色", "绿色"], 148: ["蓝色", "红色"], 149: ["红色", "绿色"], 150: ["蓝色", "红色"],
+        151: ["绿色", "蓝色"], 152: ["红色", "绿色"], 153: ["蓝色", "红色"], 154: ["红色", "绿色"], 155: ["绿色", "蓝色"], 156: ["蓝色", "红色"], 157: ["红色", "绿色"], 158: ["绿色", "蓝色"], 159: ["红色", "绿色"], 160: ["绿色", "蓝色"],
+        161: ["蓝色", "红色"], 162: ["红色", "绿色"], 163: ["绿色", "蓝色"], 164: ["红色", "绿色"], 165: ["蓝色", "红色"], 166: ["绿色", "蓝色"], 167: ["蓝色", "红色"], 168: ["绿色", "蓝色"], 169: ["红色", "绿色"], 170: ["绿色", "蓝色"],
+        171: ["蓝色", "红色"], 172: ["绿色", "蓝色"], 173: ["蓝色", "红色"], 174: ["红色", "绿色"], 175: ["蓝色", "红色"], 176: ["绿色", "蓝色"], 177: ["蓝色", "红色"], 178: ["绿色", "蓝色"], 179: ["红色", "绿色"], 180: ["蓝色", "红色"],
+        181: ["红色", "绿色"], 182: ["绿色", "蓝色"], 183: ["红色", "绿色"], 184: ["绿色", "蓝色"], 185: ["蓝色", "红色"], 186: ["红色", "绿色"], 187: ["蓝色", "红色"], 188: ["绿色", "蓝色"], 189: ["蓝色", "红色"], 190: ["红色", "绿色"],
+        191: ["蓝色", "红色"], 192: ["绿色", "蓝色"], 193: ["蓝色", "红色"], 194: ["绿色", "蓝色"], 195: ["红色", "绿色"], 196: ["绿色", "蓝色"], 197: ["蓝色", "红色"], 198: ["绿色", "蓝色"], 199: ["蓝色", "红色"], 200: ["红色", "绿色"],
+        201: ["红色", "蓝色"], 202: ["蓝色", "绿色"], 203: ["绿色", "红色"], 204: ["蓝色", "绿色"], 205: ["红色", "蓝色"], 206: ["绿色", "红色"], 207: ["红色", "蓝色"], 208: ["蓝色", "绿色"], 209: ["红色", "蓝色"], 210: ["绿色", "红色"],
+        211: ["红色", "蓝色"], 212: ["蓝色", "绿色"], 213: ["绿色", "红色"], 214: ["红色", "蓝色"], 215: ["绿色", "红色"], 216: ["红色", "蓝色"], 217: ["绿色", "红色"], 218: ["红色", "蓝色"], 219: ["绿色", "红色"], 220: ["红色", "蓝色"],
+        221: ["绿色", "红色"], 222: ["蓝色", "绿色"], 223: ["红色", "蓝色"], 224: ["绿色", "红色"], 225: ["红色", "蓝色"], 226: ["绿色", "红色"], 227: ["红色", "蓝色"], 228: ["蓝色", "绿色"], 229: ["红色", "蓝色"], 230: ["绿色", "红色"],
+        231: ["红色", "蓝色"], 232: ["蓝色", "绿色"], 233: ["绿色", "红色"], 234: ["红色", "蓝色"], 235: ["绿色", "红色"], 236: ["红色", "蓝色"], 237: ["蓝色", "绿色"], 238: ["绿色", "红色"], 239: ["蓝色", "绿色"], 240: ["绿色", "红色"],
+        241: ["红色", "蓝色"], 242: ["蓝色", "绿色"], 243: ["绿色", "红色"], 244: ["红色", "蓝色"], 245: ["蓝色", "绿色"], 246: ["红色", "蓝色"], 247: ["绿色", "红色"], 248: ["红色", "蓝色"], 249: ["绿色", "红色"], 250: ["红色", "蓝色"],
+        251: ["蓝色", "绿色"], 252: ["红色", "蓝色"], 253: ["绿色", "红色"], 254: ["蓝色", "绿色"], 255: ["绿色", "红色"], 256: ["蓝色", "绿色"], 257: ["红色", "蓝色"], 258: ["绿色", "红色"], 259: ["红色", "蓝色"], 260: ["蓝色", "绿色"],
+        261: ["红色", "蓝色"], 262: ["蓝色", "绿色"], 263: ["绿色", "红色"], 264: ["蓝色", "绿色"], 265: ["绿色", "红色"], 266: ["红色", "蓝色"], 267: ["绿色", "红色"], 268: ["红色", "蓝色"], 269: ["绿色", "红色"], 270: ["红色", "蓝色"],
+        271: ["绿色", "红色"], 272: ["红色", "蓝色"], 273: ["绿色", "红色"], 274: ["红色", "蓝色"], 275: ["蓝色", "绿色"], 276: ["红色", "蓝色"], 277: ["绿色", "红色"], 278: ["红色", "蓝色"], 279: ["蓝色", "绿色"], 280: ["红色", "蓝色"],
+        281: ["蓝色", "绿色"], 282: ["绿色", "红色"], 283: ["蓝色", "绿色"], 284: ["红色", "蓝色"], 285: ["绿色", "红色"], 286: ["蓝色", "绿色"], 287: ["绿色", "红色"], 288: ["蓝色", "绿色"], 289: ["红色", "蓝色"], 290: ["蓝色", "绿色"],
+        291: ["红色", "蓝色"], 292: ["绿色", "红色"], 293: ["蓝色", "绿色"], 294: ["绿色", "红色"], 295: ["蓝色", "绿色"], 296: ["红色", "蓝色"], 297: ["蓝色", "绿色"], 298: ["红色", "蓝色"], 299: ["绿色", "红色"], 300: ["红色", "蓝色"],
+        301: ["蓝色", "绿色"], 302: ["红色", "蓝色"], 303: ["蓝色", "绿色"], 304: ["绿色", "红色"], 305: ["红色", "蓝色"], 306: ["蓝色", "绿色"], 307: ["红色", "蓝色"], 308: ["绿色", "红色"], 309: ["蓝色", "绿色"], 310: ["红色", "蓝色"],
+        311: ["绿色", "红色"], 312: ["蓝色", "绿色"], 313: ["绿色", "红色"], 314: ["红色", "蓝色"], 315: ["绿色", "红色"], 316: ["蓝色", "绿色"], 317: ["绿色", "红色"], 318: ["蓝色", "绿色"], 319: ["红色", "蓝色"], 320: ["绿色", "红色"],
+        321: ["红色", "蓝色"], 322: ["绿色", "红色"], 323: ["红色", "蓝色"], 324: ["绿色", "红色"], 325: ["红色", "蓝色"], 326: ["蓝色", "绿色"], 327: ["红色", "蓝色"], 328: ["绿色", "红色"], 329: ["红色", "蓝色"], 330: ["绿色", "红色"],
+        331: ["蓝色", "绿色"], 332: ["红色", "蓝色"], 333: ["绿色", "红色"], 334: ["红色", "蓝色"], 335: ["蓝色", "绿色"], 336: ["绿色", "红色"], 337: ["红色", "蓝色"], 338: ["绿色", "红色"], 339: ["蓝色", "绿色"], 340: ["绿色", "红色"],
+        341: ["蓝色", "绿色"], 342: ["红色", "蓝色"], 343: ["蓝色", "绿色"], 344: ["红色", "蓝色"], 345: ["绿色", "红色"], 346: ["红色", "蓝色"], 347: ["蓝色", "绿色"], 348: ["红色", "蓝色"], 349: ["蓝色", "绿色"], 350: ["绿色", "红色"],
+        351: ["红色", "蓝色"], 352: ["绿色", "红色"], 353: ["蓝色", "绿色"], 354: ["红色", "蓝色"], 355: ["绿色", "红色"], 356: ["蓝色", "绿色"], 357: ["红色", "蓝色"], 358: ["蓝色", "绿色"], 359: ["红色", "蓝色"], 360: ["蓝色", "绿色"],
+        361: ["红色", "蓝色"], 362: ["蓝色", "绿色"], 363: ["红色", "蓝色"], 364: ["绿色", "红色"], 365: ["红色", "蓝色"], 366: ["蓝色", "绿色"]
+    };
+
+    function fetchJSONP(url) {
+        return fetch(url)
+            .then(res => res.text())
+            .then(text => {
+                const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
+                if (match && match[1]) return JSON.parse(match[1]);
+                throw new Error(" ");
+            });
+    }
+
+    function getPredictTwoColorsForKy(kyNum) {
+        let actualKy = ((kyNum - 1) % 366) + 1;
+        if (STATIC_PREDICTIONS[actualKy]) {
+            return STATIC_PREDICTIONS[actualKy];
+        }
+        return ["红色", "绿色"];
+    }
+
+    function checkIsWin(predictedColors, numTe) {
+        if (!numTe) return false;
+        let formattedNum = formatTwoDigits(numTe);
+        
+        for (let color of predictedColors) {
+            let nums = COLOR_MAP[color] || [];
+            if (nums.includes(formattedNum)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Chỉ bôi vàng chữ bên trong ngoặc 【】, không bôi dấu ngoặc
+    function formatPredictionWithWinningHighlight(predictedColors, numTe) {
+        let formattedNum = formatTwoDigits(numTe);
+        let resultHtml = "";
+
+        for (let color of predictedColors) {
+            let nums = COLOR_MAP[color] || [];
+            if (nums.includes(formattedNum)) {
+                resultHtml += `【<span style="background-color:yellow; color:#FF0000; font-weight:bold;">${color}</span>】`;
+            } else {
+                resultHtml += `【${color}】`;
+            }
+        }
+        return resultHtml;
+    }
+
+    function formatTwoDigits(val) {
+        let cleanVal = String(val).trim();
+        let num = parseInt(cleanVal.replace(/\D/g, ''), 10);
+        if (isNaN(num)) return '';
+        return String(num).padStart(2, '0');
+    }
+
+    function formatThreeDigits(val) {
+        let num = parseInt(String(val).replace(/\D/g, ''), 10);
+        if (isNaN(num)) return '001';
+        return String(num).padStart(3, '0');
+    }
+
+    async function initPredict() {
+        try {
+            const rawRules = await fetchJSONP(URL_DULIEU);
+            if (rawRules.table && rawRules.table.rows) {
+                rawRules.table.rows.forEach(r => {
+                    if (r.c && r.c[0] && r.c[0].v !== null && r.c[0].v !== undefined) {
+                        let formattedNum = formatTwoDigits(r.c[0].v);
+                        let animal = (r.c[1] && r.c[1].v !== null && r.c[1].v !== undefined) ? String(r.c[1].v).trim() : '';
+                        if (formattedNum && animal) {
+                            duLieuMap[formattedNum] = animal;
+                        }
+                    }
+                });
+            }
+
+            const rawKQ = await fetchJSONP(URL_KQ);
+            const rows = rawKQ.table.rows;
+            let parsedList = [];
+
+            if (rows) {
+                for (let i = 0; i < rows.length; i++) {
+                    const r = rows[i].c;
+                    if (!r || !r[0] || r[0].v === null || r[0].v === undefined) continue;
+                    
+                    let kyRaw = String(r[0].v).trim();
+                    let kyOnlyNum = parseInt(kyRaw.replace(/\D/g, ''), 10) || 0;
+                    
+                    let numTeFormatted = '';
+                    if (r[7] && r[7].v !== null && r[7].v !== undefined) {
+                        let valStr = String(r[7].v).trim();
+                        if (valStr !== '' && valStr !== '0' && valStr !== '00') {
+                            numTeFormatted = formatTwoDigits(valStr);
+                        }
+                    }
+
+                    if (kyOnlyNum > 0) {
+                        parsedList.push({
+                            kyNum: kyOnlyNum,
+                            numTe: numTeFormatted
+                        });
+                    }
+                }
+            }
+
+            let doneList = [];
+            let pendingKyObj = null;
+
+            for (let i = 0; i < parsedList.length; i++) {
+                let item = parsedList[i];
+                let isDone = item.numTe !== '' && item.numTe !== '00';
+                if (isDone) {
+                    doneList.push(item);
+                } else {
+                    pendingKyObj = item;
+                }
+            }
+
+            let targetPredictKy = 1;
+            if (pendingKyObj) {
+                targetPredictKy = pendingKyObj.kyNum;
+            } else if (doneList.length > 0) {
+                targetPredictKy = doneList[doneList.length - 1].kyNum + 1;
+            }
+
+            let evaluatedDoneList = [];
+            for (let i = 0; i < doneList.length; i++) {
+                let item = doneList[i];
+                let predictedColors = getPredictTwoColorsForKy(item.kyNum);
+                let actualAnimal = duLieuMap[item.numTe] || '';
+                let isWin = checkIsWin(predictedColors, item.numTe);
+                evaluatedDoneList.push({ item, predictedColors, actualAnimal, isWin });
+            }
+
+            let checkLatestMisses = 0;
+            for (let i = evaluatedDoneList.length - 1; i >= 0; i--) {
+                if (!evaluatedDoneList[i].isWin) {
+                    checkLatestMisses++;
+                } else {
+                    break;
+                }
+            }
+
+            let cutoffIndex = 0;
+            if (checkLatestMisses < 3) {
+                let consecutiveMisses = 0;
+                for (let i = evaluatedDoneList.length - 1; i >= 0; i--) {
+                    if (!evaluatedDoneList[i].isWin) {
+                        consecutiveMisses++;
+                        if (consecutiveMisses >= 3) {
+                            cutoffIndex = i + 1;
+                            break;
+                        }
+                    } else {
+                        consecutiveMisses = 0;
+                    }
+                }
+            } else {
+                cutoffIndex = evaluatedDoneList.length;
+            }
+
+            let nextKyNum = targetPredictKy;
+            let predictNextArr = getPredictTwoColorsForKy(nextKyNum);
+            let kyStrNext = formatThreeDigits(nextKyNum);
+            let predictNextStr = `【${predictNextArr[0]}】【${predictNextArr[1]}】`;
+
+            let htmlNextKy = `<p>\n\t${kyStrNext}期:波路→${predictNextStr}(開:<span style="color: #FF0000">？00</span>)准!\n</p>`;
+
+            let historyOutputs = [];
+
+            if (checkLatestMisses < 3) {
+                for (let i = cutoffIndex; i < evaluatedDoneList.length; i++) {
+                    let entry = evaluatedDoneList[i];
+                    if (entry.isWin) {
+                        let resStrWin = entry.actualAnimal + entry.item.numTe;
+                        let kyStr = formatThreeDigits(entry.item.kyNum);
+                        
+                        let formattedPredict = formatPredictionWithWinningHighlight(entry.predictedColors, entry.item.numTe);
+                        
+                        historyOutputs.push(`<p>\n\t${kyStr}期:波路→${formattedPredict}(開:<span style="color: #FF0000">${resStrWin}</span>)准!\n</p>`);
+                    }
+                }
+            }
+
+            historyOutputs.reverse();
+
+            let finalOutputs = [htmlNextKy, ...historyOutputs];
+
+            let currentCount = finalOutputs.length;
+            if (currentCount === 1) {
+                let kyStr1 = formatThreeDigits(nextKyNum + 1);
+                let kyStr2 = formatThreeDigits(nextKyNum + 2);
+                let defaultHtml1 = `<p>\n\t${kyStr1}期:波路→【發發】【發發】(開:<span style="color: #FF0000">？00</span>)准!\n</p>`;
+                let defaultHtml2 = `<p>\n\t${kyStr2}期:波路→【發發】【發發】(開:<span style="color: #FF0000">？00</span>)准!\n</p>`;
+                finalOutputs.unshift(defaultHtml1);
+                finalOutputs.unshift(defaultHtml2);
+            } else if (currentCount === 2) {
+                let kyStrExtra = formatThreeDigits(nextKyNum + 1);
+                let defaultHtmlExtra = `<p>\n\t${kyStrExtra}期:波路→【發發】【發發】(開:<span style="color: #FF0000">？00</span>)准!\n</p>`;
+                finalOutputs.unshift(defaultHtmlExtra);
+            }
+
+            document.getElementById('content-container').innerHTML = finalOutputs.join('');
+
+        } catch (err) {
+            console.error(err);
+            document.getElementById('content-container').innerHTML = ' ';
+        }
+    }
+    initPredict();
+</script>
+
+</body>
+</html>

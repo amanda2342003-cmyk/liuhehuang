@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一头中特</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 5px;
+            background-color: #fff;
+            color: #000;
+        }
+        .content {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<div id="content-container" class="content"></div>
+
+<script>
+    const SPREADSHEET_ID = '19wtMwveTJ_eW09pp7ANQj1NkLNbHIA4kWLsoNAk5Xd8';
+    const SHEET_NAME_KQ = 'KQ_AOMEN';
+    const SHEET_NAME_DULIEU = 'DULIEU';
+
+    const URL_KQ = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME_KQ}&_=${Date.now()}`;
+    const URL_DULIEU = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME_DULIEU}&_=${Date.now()}`;
+
+    let duLieuMap = {};
+
+    const ALL_HEADS = ["0头", "1头", "2头", "3头", "4头"];
+
+    // Bảng 366 kỳ dự đoán cố định (Mỗi kỳ chọn 1 trong 5 đầu: 0头 -> 4头)
+    const STATIC_PREDICTIONS = {
+        1: "3头", 2: "1头", 3: "0头", 4: "4头", 5: "2头", 6: "1头", 7: "3头", 8: "0头", 9: "2头", 10: "4头",
+        11: "1头", 12: "3头", 13: "2头", 14: "0头", 15: "4头", 16: "1头", 17: "2头", 18: "3头", 19: "0头", 20: "4头",
+        21: "2头", 22: "1头", 23: "3头", 24: "4头", 25: "0头", 26: "2头", 27: "1头", 28: "3头", 29: "0头", 30: "4头",
+        31: "1头", 32: "2头", 33: "4头", 34: "3头", 35: "0头", 36: "1头", 37: "2头", 38: "3头", 39: "4头", 40: "0头",
+        41: "2头", 42: "1头", 43: "3头", 44: "0头", 45: "4头", 46: "1头", 47: "2头", 48: "3头", 49: "4头", 50: "0头",
+        51: "3头", 52: "1头", 53: "2头", 54: "0头", 55: "4头", 56: "2头", 57: "1头", 58: "3头", 59: "0头", 60: "4头",
+        61: "1头", 62: "3头", 63: "2头", 64: "4头", 65: "0头", 66: "2头", 67: "1头", 68: "3头", 69: "0头", 70: "4头",
+        71: "3头", 72: "2头", 73: "1头", 74: "0头", 75: "4头", 76: "2头", 77: "3头", 78: "1头", 79: "0头", 80: "4头",
+        81: "1头", 82: "2头", 83: "3头", 84: "4头", 85: "0头", 86: "3头", 87: "1头", 88: "2头", 89: "0头", 90: "4头",
+        91: "2头", 92: "3头", 93: "1头", 94: "0头", 95: "4头", 96: "1头", 97: "2头", 98: "3头", 99: "4头", 100: "0头",
+        101: "3头", 102: "1头", 103: "2头", 104: "4头", 105: "0头", 106: "2头", 107: "3头", 108: "1头", 109: "0头", 110: "4头",
+        111: "1头", 112: "2头", 113: "3头", 114: "0头", 115: "4头", 116: "3头", 117: "1头", 118: "2头", 119: "4头", 120: "0头",
+        121: "2头", 122: "1头", 123: "3头", 124: "0头", 125: "4头", 126: "1头", 127: "3头", 128: "2头", 129: "0头", 130: "4头",
+        131: "3头", 132: "2头", 133: "1头", 134: "4头", 135: "0头", 136: "2头", 137: "1头", 138: "3头", 139: "0头", 140: "4头",
+        141: "1头", 142: "3头", 143: "2头", 144: "0头", 145: "4头", 146: "2头", 147: "1头", 148: "3头", 149: "4头", 150: "0头",
+        151: "3头", 152: "2头", 153: "1头", 154: "0头", 155: "4头", 156: "1头", 157: "3头", 158: "2头", 159: "0头", 160: "4头",
+        161: "2头", 162: "1头", 163: "3头", 164: "4头", 165: "0头", 166: "3头", 167: "2头", 168: "1头", 169: "0头", 170: "4头",
+        171: "1头", 172: "3头", 173: "2头", 174: "0头", 175: "4头", 176: "2头", 177: "1头", 178: "3头", 179: "4头", 180: "0头",
+        181: "3头", 182: "1头", 183: "2头", 184: "0头", 185: "4头", 186: "1头", 187: "2头", 188: "3头", 189: "0头", 190: "4头",
+        191: "2头", 192: "3头", 193: "1头", 194: "4头", 195: "0头", 196: "3头", 197: "1头", 198: "2头", 199: "0头", 200: "4头",
+        201: "1头", 202: "2头", 203: "3头", 204: "0头", 205: "4头", 206: "2头", 207: "3头", 208: "1头", 209: "4头", 210: "0头",
+        211: "3头", 212: "1头", 213: "2头", 214: "0头", 215: "4头", 216: "1头", 217: "2头", 218: "3头", 219: "0头", 220: "4头",
+        221: "2头", 222: "3头", 223: "1头", 224: "4头", 225: "0头", 226: "3头", 227: "1头", 228: "2头", 229: "0头", 230: "4头",
+        231: "1头", 232: "2头", 233: "3头", 234: "4头", 235: "0头", 236: "2头", 237: "3头", 238: "1头", 239: "0头", 240: "4头",
+        241: "3头", 242: "1头", 243: "2头", 244: "0头", 245: "4头", 246: "1头", 247: "3头", 248: "2头", 249: "4头", 250: "0头",
+        251: "2头", 252: "1头", 253: "3头", 254: "0头", 255: "4头", 256: "3头", 257: "2头", 258: "1头", 259: "0头", 260: "4头",
+        261: "1头", 262: "3头", 263: "2头", 264: "4头", 265: "0头", 266: "2头", 267: "1头", 268: "3头", 269: "0头", 270: "4头",
+        271: "3头", 272: "2头", 273: "1头", 274: "0头", 275: "4头", 276: "1头", 277: "3头", 278: "2头", 279: "4头", 280: "0头",
+        281: "2头", 282: "1头", 283: "3头", 284: "0头", 285: "4头", 286: "3头", 287: "1头", 288: "2头", 289: "0头", 290: "4头",
+        291: "1头", 292: "2头", 293: "3头", 294: "4头", 295: "0头", 296: "2头", 297: "3头", 298: "1头", 299: "0头", 300: "4头",
+        301: "3头", 302: "1头", 303: "2头", 304: "0头", 305: "4头", 306: "1头", 307: "2头", 308: "3头", 309: "4头", 310: "0头",
+        311: "2头", 312: "3头", 313: "1头", 314: "0头", 315: "4头", 316: "3头", 317: "1头", 318: "2头", 319: "0头", 320: "4头",
+        321: "1头", 322: "2头", 323: "3头", 324: "4头", 325: "0头", 326: "2头", 327: "3头", 328: "1头", 329: "0头", 330: "4头",
+        331: "3头", 332: "1头", 333: "2头", 334: "0头", 335: "4头", 336: "1头", 337: "2头", 338: "3头", 339: "4头", 340: "0头",
+        341: "2头", 342: "3头", 343: "1头", 344: "0头", 345: "4头", 346: "3头", 347: "1头", 348: "2头", 349: "0头", 350: "4头",
+        351: "1头", 352: "2头", 353: "3头", 354: "4头", 355: "0头", 356: "2头", 357: "3头", 358: "1头", 359: "0头", 360: "4头",
+        361: "3头", 362: "1头", 363: "2头", 364: "0头", 365: "4头", 366: "1头"
+    };
+
+    function fetchJSONP(url) {
+        return fetch(url)
+            .then(res => res.text())
+            .then(text => {
+                const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
+                if (match && match[1]) return JSON.parse(match[1]);
+                throw new Error(" ");
+            });
+    }
+
+    // Lấy đầu dự đoán cho từng kỳ
+    function getPredictHeadForKy(kyNum) {
+        let actualKy = ((kyNum - 1) % 366) + 1;
+        if (STATIC_PREDICTIONS[actualKy]) {
+            return STATIC_PREDICTIONS[actualKy];
+        }
+        return ALL_HEADS[actualKy % 5];
+    }
+
+    // Chuyển đổi số ra dạng Đầu (01-09 -> 0头, 10-19 -> 1头, v.v.)
+    function getHeadFromNum(numStr) {
+        let n = parseInt(numStr, 10);
+        if (isNaN(n)) return '';
+        if (n >= 1 && n <= 9) return '0头';
+        if (n >= 10 && n <= 19) return '1头';
+        if (n >= 20 && n <= 29) return '2头';
+        if (n >= 30 && n <= 39) return '3头';
+        if (n >= 40 && n <= 49) return '4头';
+        return '';
+    }
+
+    function formatTwoDigits(val) {
+        let cleanVal = String(val).trim();
+        let num = parseInt(cleanVal.replace(/\D/g, ''), 10);
+        if (isNaN(num)) return '';
+        return String(num).padStart(2, '0');
+    }
+
+    function formatThreeDigits(val) {
+        let num = parseInt(String(val).replace(/\D/g, ''), 10);
+        if (isNaN(num)) return '001';
+        return String(num).padStart(3, '0');
+    }
+
+    async function initPredict() {
+        try {
+            const rawRules = await fetchJSONP(URL_DULIEU);
+            if (rawRules.table && rawRules.table.rows) {
+                rawRules.table.rows.forEach(r => {
+                    if (r.c && r.c[0] && r.c[0].v !== null && r.c[0].v !== undefined) {
+                        let formattedNum = formatTwoDigits(r.c[0].v);
+                        let animal = (r.c[1] && r.c[1].v !== null && r.c[1].v !== undefined) ? String(r.c[1].v).trim() : '';
+                        if (formattedNum && animal) {
+                            duLieuMap[formattedNum] = animal;
+                        }
+                    }
+                });
+            }
+
+            const rawKQ = await fetchJSONP(URL_KQ);
+            const rows = rawKQ.table.rows;
+            let parsedList = [];
+
+            if (rows) {
+                for (let i = 0; i < rows.length; i++) {
+                    const r = rows[i].c;
+                    if (!r || !r[0] || r[0].v === null || r[0].v === undefined) continue;
+                    
+                    let kyRaw = String(r[0].v).trim();
+                    let kyOnlyNum = parseInt(kyRaw.replace(/\D/g, ''), 10) || 0;
+                    
+                    let numTeFormatted = '';
+                    if (r[7] && r[7].v !== null && r[7].v !== undefined) {
+                        let valStr = String(r[7].v).trim();
+                        if (valStr !== '' && valStr !== '0' && valStr !== '00') {
+                            numTeFormatted = formatTwoDigits(valStr);
+                        }
+                    }
+
+                    if (kyOnlyNum > 0) {
+                        parsedList.push({
+                            kyNum: kyOnlyNum,
+                            numTe: numTeFormatted
+                        });
+                    }
+                }
+            }
+
+            let doneList = [];
+            let pendingKyObj = null;
+
+            for (let i = 0; i < parsedList.length; i++) {
+                let item = parsedList[i];
+                let isDone = item.numTe !== '' && item.numTe !== '00';
+                if (isDone) {
+                    doneList.push(item);
+                } else {
+                    pendingKyObj = item;
+                }
+            }
+
+            let targetPredictKy = 1;
+            if (pendingKyObj) {
+                targetPredictKy = pendingKyObj.kyNum;
+            } else if (doneList.length > 0) {
+                targetPredictKy = doneList[doneList.length - 1].kyNum + 1;
+            }
+
+            let evaluatedDoneList = [];
+            for (let i = 0; i < doneList.length; i++) {
+                let item = doneList[i];
+                let predictedHead = getPredictHeadForKy(item.kyNum);
+                let actualHead = getHeadFromNum(item.numTe);
+                let actualAnimal = duLieuMap[item.numTe] || '';
+                let isWin = actualHead !== '' && predictedHead === actualHead;
+                evaluatedDoneList.push({ item, predictedHead, actualHead, actualAnimal, isWin });
+            }
+
+            let checkLatestMisses = 0;
+            for (let i = evaluatedDoneList.length - 1; i >= 0; i--) {
+                if (!evaluatedDoneList[i].isWin) {
+                    checkLatestMisses++;
+                } else {
+                    break;
+                }
+            }
+
+            let cutoffIndex = 0;
+            if (checkLatestMisses < 3) {
+                let consecutiveMisses = 0;
+                for (let i = evaluatedDoneList.length - 1; i >= 0; i--) {
+                    if (!evaluatedDoneList[i].isWin) {
+                        consecutiveMisses++;
+                        if (consecutiveMisses >= 3) {
+                            cutoffIndex = i + 1;
+                            break;
+                        }
+                    } else {
+                        consecutiveMisses = 0;
+                    }
+                }
+            } else {
+                cutoffIndex = evaluatedDoneList.length;
+            }
+
+            let nextKyNum = targetPredictKy;
+            let predictNext = getPredictHeadForKy(nextKyNum);
+            let kyStrNext = formatThreeDigits(nextKyNum);
+
+            let htmlNextKy = `<p style="font-family:'Microsoft YaHei',微软雅黑,sans-serif;font-size:17.3333px;text-align:left; background-color:#FFFFFF;">\n\t${kyStrNext}期【一头中特】=【<span style="color: #FF0000">${predictNext}</span>】开：<span style="color:#FF0000;">？00</span>准\n</p>`;
+
+            let historyOutputs = [];
+
+            if (checkLatestMisses < 3) {
+                for (let i = cutoffIndex; i < evaluatedDoneList.length; i++) {
+                    let entry = evaluatedDoneList[i];
+                    if (entry.isWin) {
+                        // Kết hợp Con Giáp + Số (Ví dụ: 鼠01)
+                        let resStrWin = entry.actualAnimal + entry.item.numTe;
+                        let kyStr = formatThreeDigits(entry.item.kyNum);
+                        
+                        // Highlight khi trúng thưởng (nền vàng, chữ đỏ đậm)
+                        let formattedPredict = `<span style="background-color:yellow; color:#FF0000; font-weight:bold;">${entry.predictedHead}</span>`;
+                        
+                        historyOutputs.push(`<p style="font-family:'Microsoft YaHei',微软雅黑,sans-serif;font-size:17.3333px;text-align:left; background-color:#FFFFFF;">\n\t${kyStr}期【一头中特】=【${formattedPredict}】开：<span style="color:#FF0000;">${resStrWin}</span>准\n</p>`);
+                    }
+                }
+            }
+
+            historyOutputs.reverse();
+
+            let finalOutputs = [htmlNextKy, ...historyOutputs];
+
+            let currentCount = finalOutputs.length;
+            if (currentCount === 1) {
+                let kyStr1 = formatThreeDigits(nextKyNum + 1);
+                let kyStr2 = formatThreeDigits(nextKyNum + 2);
+                let defaultHtml1 = `<p style="font-family:'Microsoft YaHei',微软雅黑,sans-serif;font-size:17.3333px;text-align:left; background-color:#FFFFFF;">\n\t${kyStr1}期【一头中特】=【<span style="color: #FF0000">$头</span>】开：<span style="color:#FF0000;">？00</span>准\n</p>`;
+                let defaultHtml2 = `<p style="font-family:'Microsoft YaHei',微软雅黑,sans-serif;font-size:17.3333px;text-align:left; background-color:#FFFFFF;">\n\t${kyStr2}期【一头中特】=【<span style="color: #FF0000">$头</span>】开：<span style="color:#FF0000;">？00</span>准\n</p>`;
+                finalOutputs.unshift(defaultHtml1);
+                finalOutputs.unshift(defaultHtml2);
+            } else if (currentCount === 2) {
+                let kyStrExtra = formatThreeDigits(nextKyNum + 1);
+                let defaultHtmlExtra = `<p style="font-family:'Microsoft YaHei',微软雅黑,sans-serif;font-size:17.3333px;text-align:left; background-color:#FFFFFF;">\n\t${kyStrExtra}期【一头中特】=【<span style="color: #FF0000">$头</span>】开：<span style="color:#FF0000;">？00</span>准\n</p>`;
+                finalOutputs.unshift(defaultHtmlExtra);
+            }
+
+            document.getElementById('content-container').innerHTML = finalOutputs.join('');
+
+        } catch (err) {
+            console.error(err);
+            document.getElementById('content-container').innerHTML = ' ';
+        }
+    }
+    initPredict();
+</script>
+
+</body>
+</html>

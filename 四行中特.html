@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>四行中特</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 5px;
+            background-color: #fff;
+            color: #000;
+        }
+        .content {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<div id="content-container" class="content"></div>
+
+<script>
+    const SPREADSHEET_ID = '19wtMwveTJ_eW09pp7ANQj1NkLNbHIA4kWLsoNAk5Xd8';
+    const SHEET_NAME_KQ = 'KQ_AOMEN';
+    const SHEET_NAME_DULIEU = 'DULIEU';
+
+    const URL_KQ = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME_KQ}&_=${Date.now()}`;
+    const URL_DULIEU = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME_DULIEU}&_=${Date.now()}`;
+
+    let duLieuMap = {};
+
+    const ELEMENTS_MAP = {
+        "金": ["04", "05", "12", "13", "26", "27", "34", "35", "42", "43"],
+        "木": ["08", "09", "16", "17", "24", "25", "38", "39", "46", "47"],
+        "水": ["01", "14", "15", "22", "23", "30", "31", "44", "45"],
+        "火": ["02", "03", "10", "11", "18", "19", "32", "33", "40", "41", "48", "49"],
+        "土": ["06", "07", "20", "21", "28", "29", "36", "37"]
+    };
+
+    const STATIC_PREDICTIONS = {
+        1: "土木水火", 2: "木水土金", 3: "金火木土", 4: "水金火木", 5: "木土水火", 6: "土火木金", 7: "金水土木", 8: "木金火水", 9: "火土水金", 10: "金木土火",
+        11: "土火金木", 12: "木土火金", 13: "金水木火", 14: "火木金土", 15: "水土火金", 16: "木金水火", 17: "金火木土", 18: "土木火金", 19: "木水金火", 20: "金火水土",
+        21: "火木土金", 22: "土金火木", 23: "金水木火", 24: "木火水土", 25: "土木火金", 26: "金土木火", 27: "水火金土", 28: "木金火水", 29: "火土水木", 30: "金水土火",
+        31: "土木火水", 32: "水火木金", 33: "木土金火", 34: "火木水土", 35: "土水木金", 36: "水土金木", 37: "金木土水", 38: "火金木土", 39: "水土火木", 40: "金火土水",
+        41: "土水木火", 42: "木土火金", 43: "水木金土", 44: "土金木水", 45: "木水土火", 46: "水火金土", 47: "火土木水", 48: "土金水木", 49: "木水火金", 50: "金火土水",
+        51: "水土金木", 52: "火木水土", 53: "金水土火", 54: "水火木金", 55: "土木火水", 56: "火水金木", 57: "木火水金", 58: "金土火水", 59: "火金木土", 60: "木水土火",
+        61: "土木水金", 62: "水火金土", 63: "火土木水", 64: "土金水木", 65: "木水金火", 66: "水土火金", 67: "金火水木", 68: "土金木火", 69: "木土金水", 70: "金水土木",
+        71: "水火木土", 72: "火木金水", 73: "木土火金", 74: "金火水土", 75: "水金土木", 76: "土水金火", 77: "金木水土", 78: "火土木水", 79: "土火金木", 80: "金水火土",
+        81: "火金土水", 82: "木土水火", 83: "土水金木", 84: "金火土水", 85: "水金木火", 86: "木水火金", 87: "金土水木", 88: "水木金火", 89: "木水火金", 90: "火土水木",
+        91: "水火木土", 92: "金木土水", 93: "木水火金", 94: "土金水木", 95: "金火木土", 96: "木水火金", 97: "火木土水", 98: "土金水火", 99: "木水火土", 100: "水火木金",
+        101: "金木水火", 102: "土水金木", 103: "水金木土", 104: "木土火水", 105: "金水土木", 106: "水金木火", 107: "土木水金", 108: "木水金土", 109: "水金土火", 110: "火木水金",
+        111: "木土金水", 112: "水金木火", 113: "金水土木", 114: "木土水金", 115: "火木金水", 116: "金水木火", 117: "木火水金", 118: "水金火土", 119: "金水土火", 120: "木土金水",
+        121: "火金水木", 122: "水火木土", 123: "木水土金", 124: "土木金水", 125: "水金木火", 126: "金火土木", 127: "木水火金", 128: "火木水土", 129: "水土木火", 130: "金火土木",
+        131: "木水火土", 132: "土木金水", 133: "火土水木", 134: "金水土火", 135: "土金木水", 136: "火木水土", 137: "金火土木", 138: "木土火水", 139: "土金木火", 140: "火木金土",
+        141: "木土火水", 142: "金水土火", 143: "火木水金", 144: "木土火水", 145: "水火土木", 146: "土木金火", 147: "火金木土", 148: "金水火木", 149: "木土水火", 150: "火金木土",
+        151: "土木火金", 152: "金火土水", 153: "木水金火", 154: "水土火木", 155: "火金水土", 156: "土火木水", 157: "金水土火", 158: "火金水木", 159: "水火金土", 160: "金土火水",
+        161: "火金土木", 162: "土水木金", 163: "木土火水", 164: "金木水火", 165: "水火金木", 166: "火金土水", 167: "木水火金", 168: "金木水土", 169: "水火金木", 170: "木水火金",
+        171: "火金土水", 172: "金火木土", 173: "木水金火", 174: "火木水金", 175: "水金火木", 176: "金土木火", 177: "木水土金", 178: "土木金水", 179: "水土木火", 180: "金火水木",
+        181: "土木火金", 182: "木水金火", 183: "火土水木", 184: "水金火土", 185: "金火土水", 186: "火木水金", 187: "土金火木", 188: "木火金水", 189: "金木水土", 190: "水土火木",
+        191: "木水金火", 192: "土火水金", 193: "金木土水", 194: "火水金土", 195: "水土火金", 196: "金火土水", 197: "土水金木", 198: "火木水土", 199: "金火木水", 200: "木水金火",
+        201: "火水土木", 202: "水火木金", 203: "土木金水", 204: "火水土木", 205: "金土水火", 206: "水火木金", 207: "土木火水", 208: "木水土火", 209: "火金水土", 210: "金火木水",
+        211: "土木金火", 212: "水金火土", 213: "火土水金", 214: "金火土水", 215: "土水木火", 216: "火土金木", 217: "金木火土", 218: "木金土水", 219: "火水木金", 220: "水火金土",
+        221: "木土火水", 222: "土木水火", 223: "金火木土", 224: "火土金木", 225: "土木火金", 226: "金火木土", 227: "火金土水", 228: "水土金火", 229: "木火水金", 230: "金木火水",
+        231: "火水土木", 232: "水火木土", 233: "木土水金", 234: "土木火水", 235: "金水土木", 236: "水火金土", 237: "土金火水", 238: "金土水火", 239: "火水土金", 240: "木金火水",
+        241: "金土水火", 242: "水火金木", 243: "土水木金", 244: "火木水土", 245: "木金土水", 246: "土水金木", 247: "水木火金", 248: "金土水火", 249: "木火金水", 250: "土水木金",
+        251: "金土水木", 252: "水金土火", 253: "木火金水", 254: "土水火金", 255: "火木水土", 256: "水金木火", 257: "土火金水", 258: "火水土木", 259: "金木火土", 260: "木土金火",
+        261: "火金木水", 262: "金火水木", 263: "木水金土", 264: "火木土金", 265: "土金木水", 266: "水火金木", 267: "木水火土", 268: "火金木水", 269: "土木水金", 270: "木火金土",
+        271: "水金火木", 272: "火水木金", 273: "金火水土", 274: "木金土水", 275: "水土火木", 276: "火木水土", 277: "土火木水", 278: "木土金火", 279: "金水火土", 280: "土火水木",
+        281: "水土金火", 282: "火金木水", 283: "木水火土", 284: "水木金火", 285: "火土木水", 286: "木火水土", 287: "水木金火", 288: "火金木水", 289: "金土水木", 290: "木水火金",
+        291: "水木金土", 292: "火金水木", 293: "金火木水", 294: "木水金土", 295: "水木火金", 296: "火金水木", 297: "土水金火", 298: "水土火金", 299: "火金木土", 300: "土木水火",
+        301: "木水土金", 302: "水金火木", 303: "土木水火", 304: "金火木水", 305: "火土金木", 306: "木水土火", 307: "土金木水", 308: "金木水土", 309: "水土金木", 310: "木火土水",
+        311: "金木水火", 312: "火水木金", 313: "木火土水", 314: "土木金火", 315: "火土水金", 316: "木金火水", 317: "金水土火", 318: "火土金木", 319: "木金火土", 320: "土火木金",
+        321: "金木土火", 322: "水金火土", 323: "木土金水", 324: "火水土木", 325: "水木火金", 326: "土火金水", 327: "金土水火", 328: "水木火金", 329: "火金土水", 330: "金土水火",
+        331: "水火木金", 332: "土金火水", 333: "火水土木", 334: "水木金火", 335: "土火水金", 336: "金土火木", 337: "水金木土", 338: "火木土水", 339: "土水金火", 340: "木金火土",
+        341: "火木水金", 342: "金水土木", 343: "木火金土", 344: "水木火金", 345: "土金木火", 346: "火水金土", 347: "木火土金", 348: "土金木水", 349: "水土金木", 350: "木火水土",
+        351: "土金火水", 352: "火水金木", 353: "水土木火", 354: "金木火水", 355: "土金水木", 356: "水土木火", 357: "火木金土", 358: "土金水木", 359: "水火木金", 360: "木土火水",
+        361: "土金水火", 362: "火水金木", 363: "水木火金", 364: "木火土水", 365: "火金木土", 366: "土木火金"
+    };
+
+    function fetchJSONP(url) {
+        return fetch(url)
+            .then(res => res.text())
+            .then(text => {
+                const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
+                if (match && match[1]) return JSON.parse(match[1]);
+                throw new Error(" ");
+            });
+    }
+
+    function getPredictFourElementsForKy(kyNum) {
+        let actualKy = ((kyNum - 1) % 366) + 1;
+        if (STATIC_PREDICTIONS[actualKy]) {
+            return STATIC_PREDICTIONS[actualKy];
+        }
+        return "土木水火";
+    }
+
+    function checkIsWin(predictedFourStr, numTe) {
+        if (!numTe) return false;
+        let formattedNum = formatTwoDigits(numTe);
+        
+        for (let char of predictedFourStr) {
+            let numsOfElement = ELEMENTS_MAP[char] || [];
+            if (numsOfElement.includes(formattedNum)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function formatPredictionWithWinningHighlight(predictedFourStr, numTe) {
+        let formattedNum = formatTwoDigits(numTe);
+        let resultHtml = "";
+
+        for (let char of predictedFourStr) {
+            let numsOfElement = ELEMENTS_MAP[char] || [];
+            if (numsOfElement.includes(formattedNum)) {
+                resultHtml += `<span style="background-color:yellow; color:#FF0000; font-weight:bold;">${char}</span>`;
+            } else {
+                resultHtml += char;
+            }
+        }
+        return resultHtml;
+    }
+
+    function formatTwoDigits(val) {
+        let cleanVal = String(val).trim();
+        let num = parseInt(cleanVal.replace(/\D/g, ''), 10);
+        if (isNaN(num)) return '';
+        return String(num).padStart(2, '0');
+    }
+
+    function formatThreeDigits(val) {
+        let num = parseInt(String(val).replace(/\D/g, ''), 10);
+        if (isNaN(num)) return '001';
+        return String(num).padStart(3, '0');
+    }
+
+    async function initPredict() {
+        try {
+            const rawRules = await fetchJSONP(URL_DULIEU);
+            if (rawRules.table && rawRules.table.rows) {
+                rawRules.table.rows.forEach(r => {
+                    if (r.c && r.c[0] && r.c[0].v !== null && r.c[0].v !== undefined) {
+                        let formattedNum = formatTwoDigits(r.c[0].v);
+                        let animal = (r.c[1] && r.c[1].v !== null && r.c[1].v !== undefined) ? String(r.c[1].v).trim() : '';
+                        if (formattedNum && animal) {
+                            duLieuMap[formattedNum] = animal;
+                        }
+                    }
+                });
+            }
+
+            const rawKQ = await fetchJSONP(URL_KQ);
+            const rows = rawKQ.table.rows;
+            let parsedList = [];
+
+            if (rows) {
+                for (let i = 0; i < rows.length; i++) {
+                    const r = rows[i].c;
+                    if (!r || !r[0] || r[0].v === null || r[0].v === undefined) continue;
+                    
+                    let kyRaw = String(r[0].v).trim();
+                    let kyOnlyNum = parseInt(kyRaw.replace(/\D/g, ''), 10) || 0;
+                    
+                    let numTeFormatted = '';
+                    if (r[7] && r[7].v !== null && r[7].v !== undefined) {
+                        let valStr = String(r[7].v).trim();
+                        if (valStr !== '' && valStr !== '0' && valStr !== '00') {
+                            numTeFormatted = formatTwoDigits(valStr);
+                        }
+                    }
+
+                    if (kyOnlyNum > 0) {
+                        parsedList.push({
+                            kyNum: kyOnlyNum,
+                            numTe: numTeFormatted
+                        });
+                    }
+                }
+            }
+
+            let doneList = [];
+            let pendingKyObj = null;
+
+            for (let i = 0; i < parsedList.length; i++) {
+                let item = parsedList[i];
+                let isDone = item.numTe !== '' && item.numTe !== '00';
+                if (isDone) {
+                    doneList.push(item);
+                } else {
+                    pendingKyObj = item;
+                }
+            }
+
+            let targetPredictKy = 1;
+            if (pendingKyObj) {
+                targetPredictKy = pendingKyObj.kyNum;
+            } else if (doneList.length > 0) {
+                targetPredictKy = doneList[doneList.length - 1].kyNum + 1;
+            }
+
+            let evaluatedDoneList = [];
+            for (let i = 0; i < doneList.length; i++) {
+                let item = doneList[i];
+                let predictedStr = getPredictFourElementsForKy(item.kyNum);
+                let actualAnimal = duLieuMap[item.numTe] || '';
+                let isWin = checkIsWin(predictedStr, item.numTe);
+                evaluatedDoneList.push({ item, predictedStr, actualAnimal, isWin });
+            }
+
+            let checkLatestMisses = 0;
+            for (let i = evaluatedDoneList.length - 1; i >= 0; i--) {
+                if (!evaluatedDoneList[i].isWin) {
+                    checkLatestMisses++;
+                } else {
+                    break;
+                }
+            }
+
+            let cutoffIndex = 0;
+            if (checkLatestMisses < 3) {
+                let consecutiveMisses = 0;
+                for (let i = evaluatedDoneList.length - 1; i >= 0; i--) {
+                    if (!evaluatedDoneList[i].isWin) {
+                        consecutiveMisses++;
+                        if (consecutiveMisses >= 3) {
+                            cutoffIndex = i + 1;
+                            break;
+                        }
+                    } else {
+                        consecutiveMisses = 0;
+                    }
+                }
+            } else {
+                cutoffIndex = evaluatedDoneList.length;
+            }
+
+            let nextKyNum = targetPredictKy;
+            let predictNext = getPredictFourElementsForKy(nextKyNum);
+            let kyStrNext = formatThreeDigits(nextKyNum);
+
+            let htmlNextKy = `<p>\n\t${kyStrNext}期：【四行中特】✨【${predictNext}】开：<span style="color:#FF0000;">？00</span>准\n</p>`;
+
+            let historyOutputs = [];
+
+            if (checkLatestMisses < 3) {
+                for (let i = cutoffIndex; i < evaluatedDoneList.length; i++) {
+                    let entry = evaluatedDoneList[i];
+                    if (entry.isWin) {
+                        let resStrWin = entry.actualAnimal + entry.item.numTe;
+                        let kyStr = formatThreeDigits(entry.item.kyNum);
+                        
+                        let formattedPredict = formatPredictionWithWinningHighlight(entry.predictedStr, entry.item.numTe);
+                        
+                        historyOutputs.push(`<p>\n\t${kyStr}期：【四行中特】✨【${formattedPredict}】开：<span style="color:#FF0000;">${resStrWin}</span>准\n</p>`);
+                    }
+                }
+            }
+
+            historyOutputs.reverse();
+
+            let finalOutputs = [htmlNextKy, ...historyOutputs];
+
+            let currentCount = finalOutputs.length;
+            if (currentCount === 1) {
+                let kyStr1 = formatThreeDigits(nextKyNum + 1);
+                let kyStr2 = formatThreeDigits(nextKyNum + 2);
+                let defaultHtml1 = `<p>\n\t${kyStr1}期：【四行中特】✨【發發發發】开：<span style="color:#FF0000;">？00</span>准\n</p>`;
+                let defaultHtml2 = `<p>\n\t${kyStr2}期：【四行中特】✨【發發發發】开：<span style="color:#FF0000;">？00</span>准\n</p>`;
+                finalOutputs.unshift(defaultHtml1);
+                finalOutputs.unshift(defaultHtml2);
+            } else if (currentCount === 2) {
+                let kyStrExtra = formatThreeDigits(nextKyNum + 1);
+                let defaultHtmlExtra = `<p>\n\t${kyStrExtra}期：【四行中特】✨【發發發發】开：<span style="color:#FF0000;">？00</span>准\n</p>`;
+                finalOutputs.unshift(defaultHtmlExtra);
+            }
+
+            document.getElementById('content-container').innerHTML = finalOutputs.join('');
+
+        } catch (err) {
+            console.error(err);
+            document.getElementById('content-container').innerHTML = ' ';
+        }
+    }
+    initPredict();
+</script>
+
+</body>
+</html>
